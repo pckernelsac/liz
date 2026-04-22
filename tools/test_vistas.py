@@ -29,7 +29,7 @@ import requests
 BASE = "http://localhost:5000"
 TIMEOUT = 10
 
-# Credenciales del admin (tomadas de app.py:245)
+# Credenciales del admin (app.py: ADMIN_CREDENTIALS)
 ADMIN_USER = "admin"
 ADMIN_PASS = "admin123"
 

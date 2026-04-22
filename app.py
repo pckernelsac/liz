@@ -11,7 +11,7 @@ from psycopg2.extras import RealDictCursor
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Mapping, Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
 import random
 from math import ceil
@@ -85,11 +85,16 @@ def format_datetime_peru(dt_string: str) -> str:
     except Exception as e:
         return dt_string
 
+def _default_secret_key() -> str:
+    """Una clave por proceso si no hay SECRET_KEY en el entorno (varios workers/réplicas rompen la sesión)."""
+    return os.getenv('SECRET_KEY') or secrets.token_hex(32)
+
+
 # Configuración de la aplicación
 @dataclass
 class AppConfig:
     """Configuración de la aplicación usando dataclass."""
-    SECRET_KEY: str = os.getenv('SECRET_KEY', secrets.token_hex(32))
+    SECRET_KEY: str = field(default_factory=_default_secret_key)
     UPLOAD_FOLDER: str = 'uploads'
     MAX_CONTENT_LENGTH: int = 16 * 1024 * 1024  # 16MB
     ALLOWED_EXTENSIONS: set[str] = None
@@ -239,24 +244,36 @@ def qp_str(request: Request, key: str, default: str = "") -> str:
 
 
 app = FastAPI(title="Sistema de Sorteos", debug=config.DEBUG)
-app.add_middleware(SessionMiddleware, secret_key=config.SECRET_KEY, max_age=3600, same_site="lax")
+# En producción HTTPS: SESSION_COOKIE_SECURE=1 (p. ej. en Dockerfile). En local HTTP déjalo en 0.
+_session_https_only = os.getenv('SESSION_COOKIE_SECURE', '0').lower() in ('1', 'true', 'yes')
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=config.SECRET_KEY,
+    max_age=3600,
+    same_site='lax',
+    https_only=_session_https_only,
+)
 
 
 @app.on_event("startup")
 def _startup_init_db() -> None:
     # Inicializa esquema (idempotente: usa CREATE TABLE IF NOT EXISTS).
     # Necesario cuando se arranca con `uvicorn app:app` sin pasar por main().
+    if not os.getenv('SECRET_KEY'):
+        logger.warning(
+            "SECRET_KEY no está definida en el entorno: con varios workers o contenedores, "
+            "cada uno firma la sesión distinto y el login de admin parece fallar. "
+            "Define SECRET_KEY (cadena aleatoria larga) en EasyPanel."
+        )
     try:
         init_database()
     except Exception as exc:
         logger.error(f"Fallo inicializando la BD en startup: {exc}")
         raise
 
-# Configuración de administrador por defecto
+# Panel /admin: usuario admin, contraseña admin123
 ADMIN_CREDENTIALS = {
     'admin': generate_password_hash('admin123'),
-    'root': generate_password_hash('root2024'),
-    'lorenzo': generate_password_hash('premios123')
 }
 
 # Crear directorios necesarios
@@ -691,20 +708,31 @@ async def handle_internal_error(request: Request, exc: Exception):
     except Exception:
         return JSONResponse(content={'success': False, 'message': 'Error interno del servidor'}, status_code=500)
 
+def _admin_unauthenticated(request: Request) -> RedirectResponse | JSONResponse:
+    """Tras proxy HTTPS, el fetch debe recibir JSON 401; un 302 devuelve HTML y rompe response.json()."""
+    accept = (request.headers.get('accept') or '').lower()
+    if 'application/json' in accept:
+        return JSONResponse(
+            content={'success': False, 'message': 'Sesión expirada. Vuelve a iniciar sesión en el panel.'},
+            status_code=401,
+        )
+    return RedirectResponse(url='/admin/login', status_code=302)
+
+
 # Decoradores de autenticación (compatible con FastAPI: inyecta Request)
 def login_required(f):
     if asyncio.iscoroutinefunction(f):
         @wraps(f)
         async def awrapper(request: Request, *args, **kwargs):
             if not request.session.get('admin_logged_in'):
-                return RedirectResponse(url='/admin/login', status_code=302)
+                return _admin_unauthenticated(request)
             return await f(request, *args, **kwargs)
         return awrapper
 
     @wraps(f)
     def decorated_function(request: Request, *args, **kwargs):
         if not request.session.get('admin_logged_in'):
-            return RedirectResponse(url='/admin/login', status_code=302)
+            return _admin_unauthenticated(request)
         return f(request, *args, **kwargs)
     return decorated_function
 

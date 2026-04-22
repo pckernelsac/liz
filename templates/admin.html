@@ -428,7 +428,14 @@ document.addEventListener('DOMContentLoaded', function() {
 // Función para cargar participantes por página
 async function loadParticipants(page) {
     try {
-        const response = await fetch(`/admin/participantes-recientes?page=${page}&per_page=${perPage}`);
+        const response = await fetch(`/admin/participantes-recientes?page=${page}&per_page=${perPage}`, {
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' },
+        });
+        if (response.status === 401) {
+            window.location.href = '/admin/login';
+            return;
+        }
         const data = await response.json();
         if (data.success) {
             window.participantsCache = Array.isArray(data.participantes) ? data.participantes : [];
@@ -613,7 +620,7 @@ function verComprobante(id, filename) {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     
-    fetch(`/ver-comprobante/${filename}`)
+    fetch(`/ver-comprobante/${filename}`, { credentials: 'same-origin' })
         .then(res => {
             if (!res.ok) {
                 throw new Error('Error en la respuesta del servidor');
@@ -735,8 +742,10 @@ document.getElementById('validacionForm').addEventListener('submit', async funct
         
         const response = await fetch('/validar-comprobante', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
             },
             body: JSON.stringify({
                 participante_id: participanteId,
@@ -800,8 +809,10 @@ async function generarTicketsPDF() {
     try {
         const response = await fetch('/generar-tickets-pdf', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
             }
         });
         
@@ -959,7 +970,8 @@ function editarParticipante(id) {
       try {
         const resp = await fetch(`/admin/participante/${p.id}/editar`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body: JSON.stringify(payload)
         });
         const result = await resp.json();

@@ -195,9 +195,18 @@
             try {
                 const response = await fetch('/admin/login', {
                     method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Accept': 'application/json' },
                     body: formData
                 });
                 
+                const ct = response.headers.get('content-type') || '';
+                if (!ct.includes('application/json')) {
+                    const text = await response.text();
+                    showErrorModal('Error del servidor', text.slice(0, 200) || ('HTTP ' + response.status));
+                    resetForm();
+                    return;
+                }
                 const result = await response.json();
                 
                 if (result.success) {
