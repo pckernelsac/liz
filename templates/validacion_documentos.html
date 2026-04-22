@@ -1,0 +1,1533 @@
+{% extends "base.html" %}
+
+{% block title %}RAPI RIFA - Validación de Documentos{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4">
+    <div class="mb-8">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-file-check text-blue-500 mr-3"></i>
+                    Centro de Validación de Documentos
+                </h1>
+                <p class="text-gray-600">Gestión completa de comprobantes y documentos de participantes</p>
+            </div>
+            <a href="{{ url_for('admin') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i>Volver al Panel
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <div class="bg-gradient-to-br from-yellow-400 to-yellow-500 text-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-yellow-100 text-sm">Pendientes</p>
+                    <h3 class="text-3xl font-bold" id="stat-pendientes">0</h3>
+                </div>
+                <i class="fas fa-clock text-4xl opacity-50"></i>
+            </div>
+            <div class="mt-4 text-xs bg-yellow-600 rounded px-2 py-1 inline-block">
+                Requieren atención
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-green-400 to-green-500 text-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-green-100 text-sm">Aprobados</p>
+                    <h3 class="text-3xl font-bold" id="stat-aprobados">0</h3>
+                </div>
+                <i class="fas fa-check-circle text-4xl opacity-50"></i>
+            </div>
+            <div class="mt-4 text-xs bg-green-600 rounded px-2 py-1 inline-block" id="stat-aprobados-hoy">
+                Hoy: 0
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-red-400 to-red-500 text-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-red-100 text-sm">Rechazados</p>
+                    <h3 class="text-3xl font-bold" id="stat-rechazados">0</h3>
+                </div>
+                <i class="fas fa-times-circle text-4xl opacity-50"></i>
+            </div>
+            <div class="mt-4 text-xs bg-red-600 rounded px-2 py-1 inline-block" id="stat-rechazados-hoy">
+                Hoy: 0
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-gray-400 to-gray-500 text-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-100 text-sm">Sin Documento</p>
+                    <h3 class="text-3xl font-bold" id="stat-sin-documento">0</h3>
+                </div>
+                <i class="fas fa-file-excel text-4xl opacity-50"></i>
+            </div>
+            <div class="mt-4 text-xs bg-gray-600 rounded px-2 py-1 inline-block">
+                Sin subir
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-purple-400 to-purple-500 text-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-purple-100 text-sm">Tasa Aprobación</p>
+                    <h3 class="text-3xl font-bold" id="stat-tasa">0%</h3>
+                </div>
+                <i class="fas fa-percentage text-4xl opacity-50"></i>
+            </div>
+            <div class="mt-4 text-xs bg-purple-600 rounded px-2 py-1 inline-block">
+                Promedio
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">
+            <i class="fas fa-bolt text-yellow-500 mr-2"></i>
+            Acciones Rápidas
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <button onclick="aprobarTodosPendientes()" 
+                    class="bg-green-100 hover:bg-green-200 text-green-800 p-4 rounded-lg transition-colors group">
+                <i class="fas fa-check-double text-2xl mb-2 group-hover:scale-110 transition-transform"></i>
+                <div class="font-semibold">Aprobar Pendientes</div>
+                <div class="text-sm text-green-600">Validación masiva</div>
+            </button>
+
+            <button onclick="abrirHistorial()" 
+                    class="bg-blue-100 hover:bg-blue-200 text-blue-800 p-4 rounded-lg transition-colors group">
+                <i class="fas fa-history text-2xl mb-2 group-hover:scale-110 transition-transform"></i>
+                <div class="font-semibold">Ver Historial</div>
+                <div class="text-sm text-blue-600">Todas las validaciones</div>
+            </button>
+
+            <button onclick="exportarReporte()" 
+                    class="bg-purple-100 hover:bg-purple-200 text-purple-800 p-4 rounded-lg transition-colors group">
+                <i class="fas fa-file-excel text-2xl mb-2 group-hover:scale-110 transition-transform"></i>
+                <div class="font-semibold">Exportar Reporte</div>
+                <div class="text-sm text-purple-600">Descargar Excel</div>
+            </button>
+
+            <button onclick="configurarNotificaciones()" 
+                    class="bg-orange-100 hover:bg-orange-200 text-orange-800 p-4 rounded-lg transition-colors group">
+                <i class="fas fa-bell text-2xl mb-2 group-hover:scale-110 transition-transform"></i>
+                <div class="font-semibold">Notificaciones</div>
+                <div class="text-sm text-orange-600">Configurar alertas</div>
+            </button>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <div class="flex flex-wrap gap-4 items-end">
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Buscar participante</label>
+                <input type="text" 
+                       id="buscarParticipante" 
+                       placeholder="Nombre, documento, WhatsApp..."
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+
+            <div class="min-w-[150px]">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Estado</label>
+                <select id="filtroEstado" 
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        onchange="filtrarPorEstado(this.value)">
+                    <option value="todos">Todos</option>
+                    <option value="pendiente">Pendientes</option>
+                    <option value="aprobado">Aprobados</option>
+                    <option value="rechazado">Rechazados</option>
+                    <option value="sin_documento">Sin documento</option>
+                </select>
+            </div>
+
+            <div class="min-w-[150px]">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Departamento</label>
+                <select id="filtroDepartamento" 
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        onchange="filtrarPorDepartamento(this.value)">
+                    <option value="">Todos</option>
+                    </select>
+            </div>
+
+            <div class="min-w-[150px]">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Fecha</label>
+                <input type="date" 
+                       id="filtroFecha" 
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                       onchange="filtrarPorFecha(this.value)">
+            </div>
+
+            <button onclick="limpiarFiltros()" 
+                    class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg transition-colors">
+                <i class="fas fa-eraser mr-2"></i>Limpiar
+            </button>
+
+            <button onclick="cargarComprobantes(1)" 
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors">
+                <i class="fas fa-sync-alt mr-2"></i>Actualizar
+            </button>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold text-gray-800">
+                    <i class="fas fa-list text-blue-500 mr-2"></i>
+                    Lista de Documentos
+                </h2>
+                <div class="flex items-center space-x-2">
+                    <input type="checkbox" id="seleccionarTodos" onchange="toggleSeleccionTodos()" class="mr-2">
+                    <label for="seleccionarTodos" class="text-sm text-gray-600">Seleccionar todos</label>
+                    <button id="btnAccionMasiva" 
+                            onclick="mostrarAccionesMasivas()" 
+                            class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition-colors hidden">
+                        <i class="fas fa-tasks mr-2"></i>Acciones masivas
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <i class="fas fa-check-square"></i>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <i class="fas fa-hashtag mr-1"></i>ID
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <i class="fas fa-user mr-1"></i>Participante
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <i class="fas fa-id-card mr-1"></i>Documento
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <i class="fab fa-whatsapp mr-1"></i>WhatsApp
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <i class="fas fa-map-marker-alt mr-1"></i>Departamento
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <i class="fas fa-file mr-1"></i>Comprobante
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <i class="fas fa-flag mr-1"></i>Estado
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <i class="fas fa-calendar mr-1"></i>Fecha
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <i class="fas fa-tools mr-1"></i>Acciones
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="tablaDocumentos" class="bg-white divide-y divide-gray-200">
+                    </tbody>
+            </table>
+        </div>
+
+        <!-- Controles de paginación -->
+        <div id="paginacionContainer" class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between" style="display: none;">
+            <div class="flex items-center space-x-2">
+                <span class="text-sm text-gray-700">
+                    Mostrando <span id="paginacion-desde">0</span> a <span id="paginacion-hasta">0</span> de <span id="paginacion-total">0</span> registros
+                </span>
+                <select id="registrosPorPagina" class="ml-4 border border-gray-300 rounded px-2 py-1 text-sm" onchange="cambiarRegistrosPorPagina(this.value)">
+                    <option value="10">10 por página</option>
+                    <option value="25">25 por página</option>
+                    <option value="50">50 por página</option>
+                    <option value="100">100 por página</option>
+                </select>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                <button id="btnPrimera" 
+                        onclick="irAPagina(1)" 
+                        class="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled>
+                    <i class="fas fa-angle-double-left mr-1"></i>Primera
+                </button>
+                
+                <button id="btnAnterior" 
+                        onclick="irAPaginaAnterior()" 
+                        class="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled>
+                    <i class="fas fa-angle-left mr-1"></i>Anterior
+                </button>
+                
+                <div id="numerosPagina" class="flex space-x-1">
+                    <!-- Los números de página se generan dinámicamente -->
+                </div>
+                
+                <button id="btnSiguiente" 
+                        onclick="irAPaginaSiguiente()" 
+                        class="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled>
+                    Siguiente<i class="fas fa-angle-right ml-1"></i>
+                </button>
+                
+                <button id="btnUltima" 
+                        onclick="irAPagina(paginacionInfo.pages)" 
+                        class="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled>
+                    Última<i class="fas fa-angle-double-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="loadingDocumentos" class="text-center py-12 hidden">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+            <p class="text-gray-600">Cargando documentos...</p>
+        </div>
+
+        <div id="emptyDocumentos" class="text-center py-12 hidden">
+            <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-medium text-gray-500 mb-2">No hay documentos</h3>
+            <p class="text-gray-400">No se encontraron documentos con los filtros aplicados</p>
+        </div>
+    </div>
+
+    <div id="modalValidacion" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 items-center justify-center">
+        <div class="bg-white rounded-lg p-6 m-4 max-w-md w-full">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4" id="modalValidacionTitulo">
+                Validar Documento
+            </h3>
+            
+            <form id="formValidacion" onsubmit="procesarValidacion(event)">
+                <input type="hidden" id="validacionId">
+                <input type="hidden" id="validacionEstado">
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">Observaciones</label>
+                    <textarea id="validacionObservaciones" 
+                              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" 
+                              rows="3" 
+                              placeholder="Opcional: Agregar comentarios..."></textarea>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">Validado por</label>
+                    <input type="text" 
+                           id="validacionPor" 
+                           value="{{ session.admin_username|title if session.admin_username else 'Administrador' }}" 
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" 
+                           required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="notificarParticipante" class="mr-2">
+                        <span class="text-gray-700">Notificar al participante por WhatsApp</span>
+                    </label>
+                </div>
+                
+                <div class="flex space-x-4">
+                    <button type="button" 
+                            onclick="cerrarModalValidacion()" 
+                            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                        <i class="fas fa-times mr-2"></i>Cancelar
+                    </button>
+                    <button type="submit" 
+                            id="btnConfirmarValidacion"
+                            class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                        <i class="fas fa-check mr-2"></i>Confirmar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalAccionesMasivas" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 items-center justify-center">
+        <div class="bg-white rounded-lg p-6 m-4 max-w-md w-full">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                <i class="fas fa-tasks text-yellow-500 mr-2"></i>
+                Acciones Masivas
+            </h3>
+            
+            <div class="mb-4">
+                <p class="text-gray-600 mb-2">
+                    Has seleccionado <span id="countSeleccionados" class="font-bold text-blue-600">0</span> documentos
+                </p>
+            </div>
+            
+            <div class="space-y-3">
+                <button onclick="validarMasivo('aprobado')" 
+                        class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                    <i class="fas fa-check-circle mr-2"></i>Aprobar todos
+                </button>
+                
+                <button onclick="validarMasivo('rechazado')" 
+                        class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                    <i class="fas fa-times-circle mr-2"></i>Rechazar todos
+                </button>
+                
+                <button onclick="exportarSeleccionados()" 
+                        class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                    <i class="fas fa-download mr-2"></i>Exportar seleccionados
+                </button>
+                
+                <button onclick="cerrarModalAccionesMasivas()" 
+                        class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                    <i class="fas fa-times mr-2"></i>Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalVerDocumento" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 items-center justify-center">
+        <div class="bg-white rounded-lg p-6 m-4 max-w-4xl w-full max-h-[90vh] overflow-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">
+                    <i class="fas fa-file-image mr-2 text-blue-500"></i>
+                    Visualizar Documento
+                </h3>
+                <button onclick="cerrarModalDocumento()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="contenidoDocumento" class="text-center">
+                </div>
+        </div>
+    </div>
+
+    <!-- Modal para asignar tickets -->
+    <div id="modalAsignarTickets" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 items-center justify-center">
+        <div class="bg-white rounded-lg p-6 m-4 max-w-md w-full">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                <i class="fas fa-ticket-alt text-blue-500 mr-2"></i>
+                Asignar Tickets Comprados
+            </h3>
+            
+            <form id="formAsignarTickets" onsubmit="procesarAsignacionTickets(event)">
+                <input type="hidden" id="asignarTicketsId">
+                
+                <div class="mb-4 bg-gray-50 p-4 rounded-lg">
+                    <p class="text-sm text-gray-600 mb-2">Participante:</p>
+                    <p class="font-semibold" id="asignarTicketsNombre"></p>
+                    <p class="text-sm text-gray-500" id="asignarTicketsDocumento"></p>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">Cantidad de tickets a asignar</label>
+                    <select id="cantidadTicketsAsignar" 
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" 
+                            required>
+                        <option value="">Seleccione cantidad</option>
+                        <option value="1">1 Ticket</option>
+                        <option value="2">2 Tickets</option>
+                        <option value="3">3 Tickets</option>
+                        <option value="4">4 Tickets</option>
+                        <option value="5">5 Tickets</option>
+                        <option value="10">10 Tickets</option>
+                        <option value="15">15 Tickets</option>
+                        <option value="20">20 Tickets</option>
+                        <option value="25">25 Tickets</option>
+                        <option value="30">30 Tickets</option>
+                        <option value="50">50 Tickets</option>
+                        <option value="custom">Cantidad personalizada...</option>
+                    </select>
+                </div>
+                
+                <div id="cantidadPersonalizadaDiv" class="mb-4 hidden">
+                    <label class="block text-gray-700 font-semibold mb-2">Cantidad personalizada</label>
+                    <input type="number" 
+                           id="cantidadPersonalizada" 
+                           min="1" 
+                           max="1000"
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" 
+                           placeholder="Ingrese cantidad">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">Observaciones</label>
+                    <textarea id="observacionesAsignar" 
+                              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" 
+                              rows="3" 
+                              placeholder="Ej: Depósito verificado por $XXX"></textarea>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="aprobarAlAsignar" checked class="mr-2">
+                        <span class="text-gray-700">Aprobar comprobante automáticamente</span>
+                    </label>
+                </div>
+                
+                <div class="bg-blue-50 p-3 rounded-lg mb-4 text-sm text-blue-700">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Se generarán los tickets adicionales manteniendo los datos del participante
+                </div>
+                
+                <div class="flex space-x-4">
+                    <button type="button" 
+                            onclick="cerrarModalAsignarTickets()" 
+                            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                        <i class="fas fa-times mr-2"></i>Cancelar
+                    </button>
+                    <button type="submit" 
+                            id="btnConfirmarAsignacion"
+                            class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                        <i class="fas fa-check mr-2"></i>Asignar Tickets
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para registrar más compras -->
+    <div id="modalRegistrarMasCompras" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 items-center justify-center">
+        <div class="bg-white rounded-lg p-6 m-4 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                <i class="fas fa-plus-circle text-purple-500 mr-2"></i>
+                Registrar Nueva Compra
+            </h3>
+            
+            <form id="formRegistrarMasCompras" onsubmit="procesarNuevaCompra(event)">
+                <input type="hidden" id="nuevaCompraDocumento">
+                
+                <div class="mb-4 bg-purple-50 p-4 rounded-lg">
+                    <p class="text-sm text-purple-600 mb-2">Cliente existente:</p>
+                    <p class="font-semibold" id="nuevaCompraNombre"></p>
+                    <p class="text-sm text-gray-500" id="nuevaCompraDocInfo"></p>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        <i class="fas fa-ticket-alt mr-2"></i>
+                        Cantidad de tickets para esta compra
+                    </label>
+                    <select id="cantidadTicketsNuevaCompra" 
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" 
+                            required>
+                        <option value="">Seleccione cantidad</option>
+                        <option value="1">1 Ticket</option>
+                        <option value="2">2 Tickets</option>
+                        <option value="3">3 Tickets</option>
+                        <option value="4">4 Tickets</option>
+                        <option value="5">5 Tickets</option>
+                        <option value="10">10 Tickets</option>
+                        <option value="15">15 Tickets</option>
+                        <option value="20">20 Tickets</option>
+                    </select>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        <i class="fas fa-file-upload mr-2"></i>
+                        Comprobante de pago
+                    </label>
+                    <input type="file" 
+                           id="comprobanteNuevaCompra"
+                           name="comprobante" 
+                           accept=".jpg,.jpeg,.png,.gif,.pdf"
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                           required>
+                    <p class="text-xs text-gray-500 mt-1">Formatos: JPG, PNG, PDF (Max: 16MB)</p>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">Observaciones</label>
+                    <textarea id="observacionesNuevaCompra" 
+                              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" 
+                              rows="3" 
+                              placeholder="Detalles de la nueva compra..."></textarea>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="aprobarNuevaCompra" checked class="mr-2">
+                        <span class="text-gray-700">Aprobar automáticamente esta compra</span>
+                    </label>
+                </div>
+                
+                <div class="bg-purple-50 p-3 rounded-lg mb-4 text-sm text-purple-700">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Se crearán nuevos tickets con los datos del cliente existente
+                </div>
+                
+                <div class="flex space-x-4">
+                    <button type="button" 
+                            onclick="cerrarModalRegistrarMasCompras()" 
+                            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                        <i class="fas fa-times mr-2"></i>Cancelar
+                    </button>
+                    <button type="submit" 
+                            id="btnConfirmarNuevaCompra"
+                            class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                        <i class="fas fa-check mr-2"></i>Registrar Compra
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toastContainer" class="fixed top-4 right-4 z-50">
+        </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Variables globales
+let documentosData = [];
+let documentosSeleccionados = new Set();
+let filtrosActivos = {
+    busqueda: '',
+    estado: 'todos',
+    departamento: '',
+    fecha: ''
+};
+let paginacionInfo = {
+    page: 1,
+    per_page: 10,
+    total: 0,
+    pages: 1,
+    has_prev: false,
+    has_next: false
+};
+
+// Inicializar
+document.addEventListener('DOMContentLoaded', function() {
+    cargarEstadisticas();
+    cargarComprobantes();
+    cargarDepartamentos();
+    
+    // Configurar búsqueda con delay
+    const searchInput = document.getElementById('buscarParticipante');
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                filtrarTabla();
+            }, 500); // Esperar 500ms después de que el usuario deje de escribir
+        });
+        
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                filtrarTabla();
+            }
+        });
+    }
+    
+    // Actualizar cada 30 segundos
+    setInterval(() => {
+        cargarEstadisticas();
+        if (!document.querySelector('.fixed.flex')) { // No actualizar si hay modal abierto
+            cargarComprobantes(paginacionInfo.page, false);
+        }
+    }, 30000);
+});
+
+// Cargar estadísticas
+async function cargarEstadisticas() {
+    try {
+        const response = await fetch('/estadisticas-validaciones');
+        const data = await response.json();
+        
+        if (data.success) {
+            // Actualizar contadores
+            document.getElementById('stat-pendientes').textContent = data.stats.pendientes;
+            document.getElementById('stat-aprobados').textContent = data.stats.aprobados;
+            document.getElementById('stat-rechazados').textContent = data.stats.rechazados;
+            document.getElementById('stat-sin-documento').textContent = data.stats.sin_comprobante;
+            
+            // Calcular tasa de aprobación
+            const totalValidados = data.stats.aprobados + data.stats.rechazados;
+            const tasa = totalValidados > 0 ? (data.stats.aprobados / totalValidados * 100).toFixed(1) : 0;
+            document.getElementById('stat-tasa').textContent = tasa + '%';
+            
+            // Actualizar estadísticas del día
+            if (data.validaciones_por_dia && data.validaciones_por_dia.length > 0) {
+                const hoy = data.validaciones_por_dia[0];
+                document.getElementById('stat-aprobados-hoy').textContent = `Hoy: ${hoy.aprobados || 0}`;
+                document.getElementById('stat-rechazados-hoy').textContent = `Hoy: ${hoy.rechazados || 0}`;
+            }
+        }
+    } catch (error) {
+        console.error('Error al cargar estadísticas:', error);
+    }
+}
+
+// Cargar comprobantes con paginación
+async function cargarComprobantes(page = 1, resetearSeleccion = true) {
+    const loading = document.getElementById('loadingDocumentos');
+    const empty = document.getElementById('emptyDocumentos');
+    const tabla = document.getElementById('tablaDocumentos');
+    
+    loading.classList.remove('hidden');
+    empty.classList.add('hidden');
+    tabla.innerHTML = '';
+    
+    if (resetearSeleccion) {
+        documentosSeleccionados.clear();
+        actualizarUISeleccion();
+        document.getElementById('seleccionarTodos').checked = false;
+    }
+    
+    try {
+        // Construir URL con parámetros de paginación y filtros
+        const params = new URLSearchParams({
+            page: page,
+            per_page: paginacionInfo.per_page,
+            search: filtrosActivos.busqueda,
+            estado: filtrosActivos.estado,
+            departamento: filtrosActivos.departamento
+        });
+        
+        if (filtrosActivos.fecha) {
+            params.append('fecha', filtrosActivos.fecha);
+        }
+        
+        const response = await fetch(`/comprobantes-pendientes?${params}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            documentosData = data.comprobantes;
+            paginacionInfo = data.pagination;
+            renderizarTabla(documentosData);
+            actualizarPaginacion();
+        }
+    } catch (error) {
+        console.error('Error al cargar comprobantes:', error);
+        mostrarToast('Error al cargar documentos', 'error');
+    } finally {
+        loading.classList.add('hidden');
+    }
+}
+
+// Renderizar tabla
+function renderizarTabla(datos) {
+    const tabla = document.getElementById('tablaDocumentos');
+    const empty = document.getElementById('emptyDocumentos');
+    
+    // Los datos ya vienen filtrados del servidor
+    const datosFiltrados = datos;
+    
+    if (datosFiltrados.length === 0) {
+        tabla.innerHTML = '';
+        empty.classList.remove('hidden');
+        document.getElementById('paginacionContainer').style.display = 'none';
+        return;
+    }
+    
+    empty.classList.add('hidden');
+    document.getElementById('paginacionContainer').style.display = 'flex';
+    
+    const html = datosFiltrados.map(doc => {
+        const estadoClasses = {
+            'pendiente': 'bg-yellow-100 text-yellow-800',
+            'aprobado': 'bg-green-100 text-green-800',
+            'rechazado': 'bg-red-100 text-red-800'
+        };
+        
+        const estadoIcons = {
+            'pendiente': 'fas fa-clock',
+            'aprobado': 'fas fa-check-circle',
+            'rechazado': 'fas fa-times-circle'
+        };
+        
+        // Corregido: Manejar múltiples tickets para un solo registro de pago
+        const ticketIds = doc.ids_tickets.split(',').map(id => parseInt(id));
+        const ticketCount = doc.cantidad_tickets;
+
+        return `
+            <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <input type="checkbox" 
+                           class="checkbox-participante" 
+                           value="${ticketIds.join(',')}"
+                           onchange="toggleSeleccion(this)"
+                           ${ticketIds.some(id => documentosSeleccionados.has(id)) ? 'checked' : ''}>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                        #${String(doc.id).padStart(6, '0')}
+                    </span>
+                    ${ticketCount > 1 ? `<span class="bg-blue-500 text-white px-2 py-1 rounded-full text-xs ml-2" title="${ticketCount} tickets asociados">${ticketCount} tickets</span>` : ''}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 h-10 w-10">
+                            <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">
+                                ${doc.nombres[0]}${doc.apellidos[0]}
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <div class="text-sm font-medium text-gray-900">${doc.nombres}</div>
+                            <div class="text-sm text-gray-500">${doc.apellidos}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <div>
+                        <span class="font-medium">${doc.tipo_documento}</span>
+                        <span class="text-gray-500">${doc.numero_documento}</span>
+                    </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <a href="https://wa.me/${doc.whatsapp.replace(/\D/g, '')}" 
+                       target="_blank"
+                       class="text-green-600 hover:text-green-800 transition-colors">
+                        <i class="fab fa-whatsapp mr-1"></i>${doc.whatsapp}
+                    </a>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">
+                        ${doc.departamento}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    ${doc.comprobante_path ? `
+                        <button onclick="verDocumento('${doc.comprobante_path}')" 
+                                class="text-blue-600 hover:text-blue-800 transition-colors">
+                            <i class="fas fa-file-image mr-1"></i>Ver
+                        </button>
+                    ` : `
+                        <span class="text-gray-400">
+                            <i class="fas fa-file-excel mr-1"></i>No subido
+                        </span>
+                    `}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    ${doc.comprobante_path ? `
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs ${estadoClasses[doc.comprobante_estado]}">
+                            <i class="${estadoIcons[doc.comprobante_estado]} mr-1"></i>
+                            ${doc.comprobante_estado.charAt(0).toUpperCase() + doc.comprobante_estado.slice(1)}
+                        </span>
+                    ` : '<span class="text-xs text-gray-400">N/A</span>'}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    ${new Date(doc.fecha_registro).toLocaleDateString('es-ES')}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <div class="flex space-x-2">
+                        ${doc.comprobante_path && doc.comprobante_estado === 'pendiente' ? `
+                            <button onclick="abrirModalAsignarTickets(${doc.id})" 
+                                    class="text-blue-600 hover:text-blue-800" 
+                                    title="Asignar tickets">
+                                <i class="fas fa-ticket-alt"></i>
+                            </button>
+                            <button onclick="validarMasivo('aprobado', [${ticketIds}])" 
+                                    class="text-green-600 hover:text-green-800" 
+                                    title="Aprobar">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button onclick="validarMasivo('rechazado', [${ticketIds}])" 
+                                    class="text-red-600 hover:text-red-800" 
+                                    title="Rechazar">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        ` : ''}
+                        <button onclick="abrirModalRegistrarMasCompras('${doc.numero_documento}', '${doc.nombres}', '${doc.apellidos}')" 
+                                class="text-purple-600 hover:text-purple-800" 
+                                title="Registrar más compras">
+                            <i class="fas fa-plus-circle"></i>
+                        </button>
+                        <button onclick="verDetalles(${doc.id})" 
+                                class="text-gray-600 hover:text-gray-800" 
+                                title="Ver detalles">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+    
+    tabla.innerHTML = html;
+}
+
+// Funciones de filtrado con recarga de datos
+function filtrarTabla() {
+    filtrosActivos.busqueda = document.getElementById('buscarParticipante').value;
+    paginacionInfo.page = 1; // Resetear a primera página
+    cargarComprobantes(1);
+}
+
+function filtrarPorEstado(estado) {
+    filtrosActivos.estado = estado;
+    paginacionInfo.page = 1; // Resetear a primera página
+    cargarComprobantes(1);
+}
+
+function filtrarPorDepartamento(departamento) {
+    filtrosActivos.departamento = departamento;
+    paginacionInfo.page = 1; // Resetear a primera página
+    cargarComprobantes(1);
+}
+
+function filtrarPorFecha(fecha) {
+    filtrosActivos.fecha = fecha;
+    paginacionInfo.page = 1; // Resetear a primera página
+    cargarComprobantes(1);
+}
+
+function limpiarFiltros() {
+    document.getElementById('buscarParticipante').value = '';
+    document.getElementById('filtroEstado').value = 'todos';
+    document.getElementById('filtroDepartamento').value = '';
+    document.getElementById('filtroFecha').value = '';
+    
+    filtrosActivos = {
+        busqueda: '',
+        estado: 'todos',
+        departamento: '',
+        fecha: ''
+    };
+    
+    paginacionInfo.page = 1; // Resetear a primera página
+    cargarComprobantes(1);
+}
+
+// ====== NUEVAS FUNCIONES DE PAGINACIÓN ======
+
+// Actualizar controles de paginación
+function actualizarPaginacion() {
+    // Actualizar información de registros
+    const desde = (paginacionInfo.page - 1) * paginacionInfo.per_page + 1;
+    const hasta = Math.min(paginacionInfo.page * paginacionInfo.per_page, paginacionInfo.total);
+    
+    document.getElementById('paginacion-desde').textContent = paginacionInfo.total > 0 ? desde : 0;
+    document.getElementById('paginacion-hasta').textContent = hasta;
+    document.getElementById('paginacion-total').textContent = paginacionInfo.total;
+    
+    // Actualizar estado de botones
+    document.getElementById('btnPrimera').disabled = !paginacionInfo.has_prev;
+    document.getElementById('btnAnterior').disabled = !paginacionInfo.has_prev;
+    document.getElementById('btnSiguiente').disabled = !paginacionInfo.has_next;
+    document.getElementById('btnUltima').disabled = !paginacionInfo.has_next;
+    
+    // Generar números de página
+    generarNumerosPagina();
+    
+    // Actualizar selector de registros por página
+    document.getElementById('registrosPorPagina').value = paginacionInfo.per_page;
+}
+
+// Generar números de página
+function generarNumerosPagina() {
+    const container = document.getElementById('numerosPagina');
+    container.innerHTML = '';
+    
+    const currentPage = paginacionInfo.page;
+    const totalPages = paginacionInfo.pages;
+    
+    // Calcular rango de páginas a mostrar
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
+    
+    // Ajustar el rango si hay pocas páginas al inicio o final
+    if (endPage - startPage < 4) {
+        if (startPage === 1) {
+            endPage = Math.min(totalPages, startPage + 4);
+        } else if (endPage === totalPages) {
+            startPage = Math.max(1, endPage - 4);
+        }
+    }
+    
+    // Agregar "..." al inicio si es necesario
+    if (startPage > 1) {
+        container.appendChild(crearBotonPagina(1));
+        if (startPage > 2) {
+            const ellipsis = document.createElement('span');
+            ellipsis.textContent = '...';
+            ellipsis.className = 'px-3 py-1 text-sm text-gray-500';
+            container.appendChild(ellipsis);
+        }
+    }
+    
+    // Agregar números de página
+    for (let i = startPage; i <= endPage; i++) {
+        container.appendChild(crearBotonPagina(i, i === currentPage));
+    }
+    
+    // Agregar "..." al final si es necesario
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            const ellipsis = document.createElement('span');
+            ellipsis.textContent = '...';
+            ellipsis.className = 'px-3 py-1 text-sm text-gray-500';
+            container.appendChild(ellipsis);
+        }
+        container.appendChild(crearBotonPagina(totalPages));
+    }
+}
+
+// Crear botón de página
+function crearBotonPagina(pageNum, isActive = false) {
+    const button = document.createElement('button');
+    button.textContent = pageNum;
+    button.onclick = () => irAPagina(pageNum);
+    
+    if (isActive) {
+        button.className = 'px-3 py-1 text-sm bg-blue-500 text-white border border-blue-500 rounded';
+    } else {
+        button.className = 'px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50';
+    }
+    
+    return button;
+}
+
+// Funciones de navegación
+function irAPagina(page) {
+    if (page >= 1 && page <= paginacionInfo.pages && page !== paginacionInfo.page) {
+        cargarComprobantes(page, false); // No resetear selección al cambiar página
+    }
+}
+
+function irAPaginaAnterior() {
+    if (paginacionInfo.has_prev) {
+        irAPagina(paginacionInfo.page - 1);
+    }
+}
+
+function irAPaginaSiguiente() {
+    if (paginacionInfo.has_next) {
+        irAPagina(paginacionInfo.page + 1);
+    }
+}
+
+function cambiarRegistrosPorPagina(nuevoPer_page) {
+    paginacionInfo.per_page = parseInt(nuevoPer_page);
+    paginacionInfo.page = 1; // Resetear a primera página
+    cargarComprobantes(1);
+}
+
+// Cargar departamentos
+async function cargarDepartamentos() {
+    const departamentos = [...new Set(documentosData.map(doc => doc.departamento))].sort();
+    const select = document.getElementById('filtroDepartamento');
+    
+    departamentos.forEach(depto => {
+        const option = document.createElement('option');
+        option.value = depto;
+        option.textContent = depto;
+        select.appendChild(option);
+    });
+}
+
+// Selección múltiple
+function toggleSeleccion(checkbox) {
+    const ids = checkbox.value.split(',').map(id => parseInt(id));
+    if (checkbox.checked) {
+        ids.forEach(id => documentosSeleccionados.add(id));
+    } else {
+        ids.forEach(id => documentosSeleccionados.delete(id));
+    }
+    
+    actualizarUISeleccion();
+}
+
+function toggleSeleccionTodos() {
+    const checkbox = document.getElementById('seleccionarTodos');
+    const checkboxes = document.querySelectorAll('.checkbox-participante');
+    
+    if (checkbox.checked) {
+        checkboxes.forEach(cb => {
+            cb.checked = true;
+            cb.value.split(',').map(id => parseInt(id)).forEach(id => documentosSeleccionados.add(id));
+        });
+    } else {
+        checkboxes.forEach(cb => {
+            cb.checked = false;
+        });
+        documentosSeleccionados.clear();
+    }
+    
+    actualizarUISeleccion();
+}
+
+function actualizarUISeleccion() {
+    const btnAccion = document.getElementById('btnAccionMasiva');
+    
+    if (documentosSeleccionados.size > 0) {
+        btnAccion.classList.remove('hidden');
+    } else {
+        btnAccion.classList.add('hidden');
+    }
+    
+    document.getElementById('countSeleccionados').textContent = documentosSeleccionados.size;
+}
+
+// Modal de validación
+function abrirModalValidacion(id, estado) {
+    const doc = documentosData.find(d => d.id === id);
+    if (!doc) return;
+    
+    document.getElementById('validacionId').value = id;
+    document.getElementById('validacionEstado').value = estado;
+    
+    const titulo = estado === 'aprobado' ? 
+        '✅ Aprobar Documento' : 
+        '❌ Rechazar Documento';
+    
+    document.getElementById('modalValidacionTitulo').textContent = titulo;
+    
+    const btnConfirmar = document.getElementById('btnConfirmarValidacion');
+    if (estado === 'aprobado') {
+        btnConfirmar.className = 'flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-colors';
+        btnConfirmar.innerHTML = '<i class="fas fa-check mr-2"></i>Aprobar';
+    } else {
+        btnConfirmar.className = 'flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition-colors';
+        btnConfirmar.innerHTML = '<i class="fas fa-times mr-2"></i>Rechazar';
+    }
+    
+    document.getElementById('modalValidacion').classList.remove('hidden');
+    document.getElementById('modalValidacion').classList.add('flex');
+}
+
+function cerrarModalValidacion() {
+    document.getElementById('modalValidacion').classList.add('hidden');
+    document.getElementById('modalValidacion').classList.remove('flex');
+    document.getElementById('formValidacion').reset();
+}
+
+async function procesarValidacion(event) {
+    event.preventDefault();
+    
+    const id = document.getElementById('validacionId').value;
+    const estado = document.getElementById('validacionEstado').value;
+    const observaciones = document.getElementById('validacionObservaciones').value;
+    const validadoPor = document.getElementById('validacionPor').value;
+    const notificar = document.getElementById('notificarParticipante').checked;
+    
+    const btnConfirmar = document.getElementById('btnConfirmarValidacion');
+    const textoOriginal = btnConfirmar.innerHTML;
+    
+    try {
+        btnConfirmar.disabled = true;
+        btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Procesando...';
+        
+        const response = await fetch('/validar-comprobante', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                participante_id: id,
+                estado: estado,
+                observaciones: observaciones,
+                validado_por: validadoPor
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            mostrarToast(result.message, 'success');
+            
+            // Notificar si se seleccionó
+            if (notificar && result.participante) {
+                // Aquí iría la lógica de notificación por WhatsApp
+                mostrarToast('Notificación enviada al participante', 'info');
+            }
+            
+            cerrarModalValidacion();
+            cargarComprobantes(paginacionInfo.page, false);
+            cargarEstadisticas();
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        mostrarToast('Error: ' + error.message, 'error');
+    } finally {
+        btnConfirmar.disabled = false;
+        btnConfirmar.innerHTML = textoOriginal;
+    }
+}
+
+// Acciones masivas
+function mostrarAccionesMasivas() {
+    if (documentosSeleccionados.size === 0) {
+        mostrarToast('No hay documentos seleccionados', 'warning');
+        return;
+    }
+    
+    document.getElementById('modalAccionesMasivas').classList.remove('hidden');
+    document.getElementById('modalAccionesMasivas').classList.add('flex');
+}
+
+function cerrarModalAccionesMasivas() {
+    document.getElementById('modalAccionesMasivas').classList.add('hidden');
+    document.getElementById('modalAccionesMasivas').classList.remove('flex');
+}
+
+async function validarMasivo(estado, ids = null) {
+    const idsAValidar = ids || Array.from(documentosSeleccionados);
+    const confirmMsg = estado === 'aprobado' ? 
+        `¿Aprobar ${idsAValidar.length} documentos?` : 
+        `¿Rechazar ${idsAValidar.length} documentos?`;
+    
+    if (!confirm(confirmMsg)) return;
+    
+    try {
+        const response = await fetch('/validar-comprobantes-lote', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                participantes_ids: idsAValidar,
+                estado: estado,
+                observaciones: 'Validación masiva',
+                validado_por: '{{ session.admin_username|title if session.admin_username else "Administrador" }}'
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            mostrarToast(result.message, 'success');
+            documentosSeleccionados.clear();
+            cerrarModalAccionesMasivas();
+            cargarComprobantes(paginacionInfo.page, false);
+            cargarEstadisticas();
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        mostrarToast('Error: ' + error.message, 'error');
+    }
+}
+
+// Ver documento
+async function verDocumento(filename) {
+    const modal = document.getElementById('modalVerDocumento');
+    const contenido = document.getElementById('contenidoDocumento');
+    
+    contenido.innerHTML = `
+        <div class="flex items-center justify-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            <span class="ml-2">Cargando documento...</span>
+        </div>
+    `;
+    
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    try {
+        const response = await fetch(`/ver-comprobante/${filename}`);
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            
+            if (blob.type.startsWith('image/')) {
+                contenido.innerHTML = `
+                    <img src="${url}" alt="Documento" class="max-w-full max-h-[70vh] mx-auto rounded-lg shadow-lg">
+                    <div class="mt-4">
+                        <a href="${url}" download class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                            <i class="fas fa-download mr-2"></i>Descargar
+                        </a>
+                    </div>
+                `;
+            } else {
+                contenido.innerHTML = `
+                    <iframe src="${url}" class="w-full h-96 border rounded-lg"></iframe>
+                    <div class="mt-4">
+                        <a href="${url}" download class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                            <i class="fas fa-download mr-2"></i>Descargar
+                        </a>
+                    </div>
+                `;
+            }
+        } else {
+            throw new Error('No se pudo cargar el documento');
+        }
+    } catch (error) {
+        contenido.innerHTML = `
+            <div class="text-center text-red-600">
+                <i class="fas fa-exclamation-triangle text-4xl mb-2"></i>
+                <p>Error al cargar el documento</p>
+            </div>
+        `;
+    }
+}
+
+function cerrarModalDocumento() {
+    document.getElementById('modalVerDocumento').classList.add('hidden');
+    document.getElementById('modalVerDocumento').classList.remove('flex');
+}
+
+// Funciones adicionales
+function verDetalles(id) {
+    const doc = documentosData.find(d => d.id === id);
+    if (doc) {
+        mostrarToast(`Detalles del participante #${id}`, 'info');
+        console.log('Detalles:', doc);
+    }
+}
+
+async function exportarReporte() {
+    window.location.href = '/exportar-validaciones';
+}
+
+async function abrirHistorial() {
+    mostrarToast('Abriendo historial de validaciones...', 'info');
+    // Aquí podrías abrir una nueva ventana o modal con el historial
+}
+
+function configurarNotificaciones() {
+    mostrarToast('Configuración de notificaciones - En desarrollo', 'info');
+}
+
+async function aprobarTodosPendientes() {
+    const pendientes = documentosData.filter(d => 
+        d.comprobante_path && d.comprobante_estado === 'pendiente'
+    );
+    
+    if (pendientes.length === 0) {
+        mostrarToast('No hay documentos pendientes', 'warning');
+        return;
+    }
+    
+    if (!confirm(`¿Aprobar ${pendientes.length} documentos pendientes?`)) return;
+    
+    const ids = pendientes.flatMap(d => d.ids_tickets.split(',').map(id => parseInt(id)));
+    
+    try {
+        const response = await fetch('/validar-comprobantes-lote', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                participantes_ids: ids,
+                estado: 'aprobado',
+                observaciones: 'Aprobación masiva de pendientes',
+                validado_por: '{{ session.admin_username|title if session.admin_username else "Administrador" }}'
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            mostrarToast(result.message, 'success');
+            cargarComprobantes(paginacionInfo.page, false);
+            cargarEstadisticas();
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        mostrarToast('Error: ' + error.message, 'error');
+    }
+}
+
+// Sistema de notificaciones toast
+function mostrarToast(mensaje, tipo = 'info') {
+    const container = document.getElementById('toastContainer');
+    
+    const colores = {
+        'success': 'bg-green-500',
+        'error': 'bg-red-500',
+        'warning': 'bg-yellow-500',
+        'info': 'bg-blue-500'
+    };
+    
+    const iconos = {
+        'success': 'fas fa-check-circle',
+        'error': 'fas fa-exclamation-circle',
+        'warning': 'fas fa-exclamation-triangle',
+        'info': 'fas fa-info-circle'
+    };
+    
+    const toast = document.createElement('div');
+    toast.className = `${colores[tipo]} text-white p-4 rounded-lg shadow-lg mb-4 flex items-center space-x-3 animate-fade-in`;
+    toast.innerHTML = `
+        <i class="${iconos[tipo]} text-xl"></i>
+        <span>${mensaje}</span>
+    `;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('animate-fade-out');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Modal para asignar tickets
+function abrirModalAsignarTickets(id) {
+    const doc = documentosData.find(d => d.id === id);
+    if (!doc) return;
+    
+    document.getElementById('asignarTicketsId').value = id;
+    document.getElementById('asignarTicketsNombre').textContent = `${doc.nombres} ${doc.apellidos}`;
+    document.getElementById('asignarTicketsDocumento').textContent = `${doc.tipo_documento}: ${doc.numero_documento}`;
+    
+    // Resetear formulario
+    document.getElementById('formAsignarTickets').reset();
+    document.getElementById('aprobarAlAsignar').checked = true;
+    document.getElementById('cantidadPersonalizadaDiv').classList.add('hidden');
+    
+    document.getElementById('modalAsignarTickets').classList.remove('hidden');
+    document.getElementById('modalAsignarTickets').classList.add('flex');
+}
+
+function cerrarModalAsignarTickets() {
+    document.getElementById('modalAsignarTickets').classList.add('hidden');
+    document.getElementById('modalAsignarTickets').classList.remove('flex');
+}
+
+// Manejar selector de cantidad personalizada
+document.getElementById('cantidadTicketsAsignar')?.addEventListener('change', function() {
+    const personalDiv = document.getElementById('cantidadPersonalizadaDiv');
+    if (this.value === 'custom') {
+        personalDiv.classList.remove('hidden');
+        document.getElementById('cantidadPersonalizada').required = true;
+    } else {
+        personalDiv.classList.add('hidden');
+        document.getElementById('cantidadPersonalizada').required = false;
+    }
+});
+
+async function procesarAsignacionTickets(event) {
+    event.preventDefault();
+    
+    const id = document.getElementById('asignarTicketsId').value;
+    const cantidadSelect = document.getElementById('cantidadTicketsAsignar').value;
+    let cantidad = cantidadSelect;
+    
+    if (cantidadSelect === 'custom') {
+        cantidad = document.getElementById('cantidadPersonalizada').value;
+    }
+    
+    const observaciones = document.getElementById('observacionesAsignar').value;
+    const aprobar = document.getElementById('aprobarAlAsignar').checked;
+    
+    const btnConfirmar = document.getElementById('btnConfirmarAsignacion');
+    const textoOriginal = btnConfirmar.innerHTML;
+    
+    try {
+        btnConfirmar.disabled = true;
+        btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Asignando tickets...';
+        
+        const response = await fetch('/admin/asignar-tickets', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                participante_id: id,
+                cantidad_tickets: parseInt(cantidad),
+                observaciones: observaciones,
+                aprobar: aprobar
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            mostrarToast(`Se asignaron ${cantidad} tickets exitosamente`, 'success');
+            cerrarModalAsignarTickets();
+            cargarComprobantes(paginacionInfo.page, false);
+            cargarEstadisticas();
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        mostrarToast('Error: ' + error.message, 'error');
+    } finally {
+        btnConfirmar.disabled = false;
+        btnConfirmar.innerHTML = textoOriginal;
+    }
+}
+
+// Modal para registrar más compras
+function abrirModalRegistrarMasCompras(documento, nombres, apellidos) {
+    document.getElementById('nuevaCompraDocumento').value = documento;
+    document.getElementById('nuevaCompraNombre').textContent = `${nombres} ${apellidos}`;
+    document.getElementById('nuevaCompraDocInfo').textContent = `Documento: ${documento}`;
+    
+    // Resetear formulario
+    document.getElementById('formRegistrarMasCompras').reset();
+    document.getElementById('aprobarNuevaCompra').checked = true;
+    
+    document.getElementById('modalRegistrarMasCompras').classList.remove('hidden');
+    document.getElementById('modalRegistrarMasCompras').classList.add('flex');
+}
+
+function cerrarModalRegistrarMasCompras() {
+    document.getElementById('modalRegistrarMasCompras').classList.add('hidden');
+    document.getElementById('modalRegistrarMasCompras').classList.remove('flex');
+}
+
+async function procesarNuevaCompra(event) {
+    event.preventDefault();
+    
+    const formData = new FormData();
+    const documento = document.getElementById('nuevaCompraDocumento').value;
+    const cantidad = document.getElementById('cantidadTicketsNuevaCompra').value;
+    const comprobante = document.getElementById('comprobanteNuevaCompra').files[0];
+    const observaciones = document.getElementById('observacionesNuevaCompra').value;
+    const aprobar = document.getElementById('aprobarNuevaCompra').checked;
+    
+    formData.append('numero_documento', documento);
+    formData.append('cantidad_tickets', cantidad);
+    formData.append('comprobante', comprobante);
+    formData.append('observaciones', observaciones);
+    formData.append('aprobar', aprobar);
+    
+    const btnConfirmar = document.getElementById('btnConfirmarNuevaCompra');
+    const textoOriginal = btnConfirmar.innerHTML;
+    
+    try {
+        btnConfirmar.disabled = true;
+        btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Registrando compra...';
+        
+        const response = await fetch('/admin/registrar-compra-adicional', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            mostrarToast(result.message, 'success');
+            cerrarModalRegistrarMasCompras();
+            cargarComprobantes(paginacionInfo.page, false);
+            cargarEstadisticas();
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        mostrarToast('Error: ' + error.message, 'error');
+    } finally {
+        btnConfirmar.disabled = false;
+        btnConfirmar.innerHTML = textoOriginal;
+    }
+}
+
+// Animaciones CSS
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fade-in {
+        from { opacity: 0; transform: translateX(100px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    
+    @keyframes fade-out {
+        from { opacity: 1; transform: translateX(0); }
+        to { opacity: 0; transform: translateX(100px); }
+    }
+    
+    .animate-fade-in {
+        animation: fade-in 0.3s ease-out;
+    }
+    
+    .animate-fade-out {
+        animation: fade-out 0.3s ease-out;
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

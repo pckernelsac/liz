@@ -1,0 +1,21 @@
+# PostgreSQL para desarrollo local (ajusta credenciales en producción)
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sorteolizbet-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: sorteo
+    ports:
+      - "5432:5432"
+    volumes:
+      - sorteolizbet_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sorteo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  sorteolizbet_pgdata:

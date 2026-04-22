@@ -1,0 +1,450 @@
+{% extends "base.html" %}
+
+{% block title %}RAPI RIFA - Ver Premios{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4">
+    <!-- Título de la página -->
+    <div class="text-center mb-12">
+        <h1 class="text-4xl font-bold text-gray-800 mb-4">
+            <i class="fas fa-gift text-orange-500 mr-3"></i>
+            PREMIOS DISPONIBLES
+            {% if es_admin %}
+            <span class="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full ml-2">
+                <i class="fas fa-user-shield"></i> MODO ADMIN
+            </span>
+            {% endif %}
+        </h1>
+        <p class="text-lg text-gray-600">¡Descubre los increíbles premios que puedes ganar!</p>
+        
+        {% if es_admin %}
+        <div class="mt-6">
+            <button onclick="abrirModalNuevoPremio()" 
+                    class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-full transition-colors">
+                <i class="fas fa-plus mr-2"></i>
+                Agregar Nuevo Premio
+            </button>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Grid de premios -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="premios-grid">
+        {% for premio in premios %}
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden hover-scale" data-premio-id="{{ premio.id }}">
+            <!-- Imagen del premio -->
+            <div class="h-48 bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center relative">
+                {% if premio.imagen_path %}
+                <img src="{{ url_for('static', filename='img/' + premio.imagen_path) }}" 
+                     alt="{{ premio.nombre }}" 
+                     class="w-full h-full object-cover">
+                {% else %}
+                <div class="text-center text-white">
+                    <i class="fas fa-trophy text-6xl mb-4"></i>
+                    <p class="text-xl font-bold">Premio {{ premio.orden }}</p>
+                </div>
+                {% endif %}
+                
+                {% if es_admin %}
+                <!-- Botones de administración -->
+                <div class="absolute top-2 right-2 flex gap-2">
+                    <button onclick="editarImagen({{ premio.id }})" 
+                            class="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full shadow-lg transition-colors">
+                        <i class="fas fa-image text-sm"></i>
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Información del premio -->
+            <div class="p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-2">{{ premio.nombre }}</h3>
+                {% if premio.descripcion %}
+                <p class="text-gray-600 mb-4">{{ premio.descripcion }}</p>
+                {% endif %}
+                
+                <!-- Badge de posición -->
+                <div class="flex justify-between items-center">
+                    <span class="inline-block bg-orange-100 text-orange-800 text-sm font-semibold px-3 py-1 rounded-full">
+                        {% if premio.orden == 1 %}
+                        <i class="fas fa-crown mr-1"></i>1er Lugar
+                        {% elif premio.orden == 2 %}
+                        <i class="fas fa-medal mr-1"></i>2do Lugar
+                        {% elif premio.orden == 3 %}
+                        <i class="fas fa-award mr-1"></i>3er Lugar
+                        {% else %}
+                        <i class="fas fa-star mr-1"></i>{{ premio.orden }}° Lugar
+                        {% endif %}
+                    </span>
+                    
+                    <div class="text-orange-500">
+                        {% if es_admin %}
+                        <!-- Botones de edición -->
+                        <div class="flex gap-2">
+                            <button onclick="editarPremio({{ premio.id }})" 
+                                    class="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full transition-colors">
+                                <i class="fas fa-edit text-sm"></i>
+                            </button>
+                            <button onclick="eliminarPremio({{ premio.id }}, '{{ premio.nombre }}')" 
+                                    class="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full transition-colors">
+                                <i class="fas fa-trash text-sm"></i>
+                            </button>
+                        </div>
+                        {% else %}
+                        <i class="fas fa-gift text-2xl"></i>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% if not premios %}
+    <div class="text-center py-16">
+        <i class="fas fa-gift text-6xl text-gray-300 mb-4"></i>
+        <h3 class="text-2xl font-bold text-gray-500 mb-2">No hay premios configurados</h3>
+        <p class="text-gray-400">Los premios se anunciarán pronto</p>
+        {% if es_admin %}
+        <button onclick="abrirModalNuevoPremio()" 
+                class="mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-full transition-colors">
+            <i class="fas fa-plus mr-2"></i>
+            Agregar Primer Premio
+        </button>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+   
+    
+    <!-- Call to action -->
+    <div class="text-center mt-12">
+        {% if not es_admin %}
+        <a href="{{ url_for('index') }}" 
+           class="inline-block bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-8 rounded-full text-lg transition-colors hover-scale">
+            <i class="fas fa-user-plus mr-2"></i>
+            ¡REGÍSTRATE AHORA!
+        </a>
+        <p class="mt-4 text-gray-600">No pierdas la oportunidad de ganar</p>
+        {% else %}
+        <a href="{{ url_for('admin') }}" 
+           class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 rounded-full text-lg transition-colors hover-scale">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Volver al Panel Admin
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{% if es_admin %}
+<!-- Modal para Crear/Editar Premio -->
+<div id="modalPremio" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 id="modalTitulo" class="text-xl font-bold text-gray-800">Nuevo Premio</h3>
+                    <button onclick="cerrarModalPremio()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <form id="formPremio">
+                    <input type="hidden" id="premioId" value="">
+                    
+                    <div class="mb-4">
+                        <label for="nombrePremio" class="block text-sm font-medium text-gray-700 mb-2">
+                            Nombre del Premio *
+                        </label>
+                        <input type="text" id="nombrePremio" name="nombre" required
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                               placeholder="Ej: Gran Premio Principal">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="descripcionPremio" class="block text-sm font-medium text-gray-700 mb-2">
+                            Descripción
+                        </label>
+                        <textarea id="descripcionPremio" name="descripcion" rows="3"
+                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                  placeholder="Descripción del premio..."></textarea>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label for="ordenPremio" class="block text-sm font-medium text-gray-700 mb-2">
+                            Orden/Posición *
+                        </label>
+                        <input type="number" id="ordenPremio" name="orden" required min="1"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                               placeholder="1">
+                        <p class="text-xs text-gray-500 mt-1">1 = Primer lugar, 2 = Segundo lugar, etc.</p>
+                    </div>
+                    
+                    <div class="flex gap-3">
+                        <button type="button" onclick="cerrarModalPremio()" 
+                                class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="submit" 
+                                class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                            <span id="btnGuardarTexto">Crear Premio</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Subir Imagen -->
+<div id="modalImagen" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">Cambiar Imagen del Premio</h3>
+                    <button onclick="cerrarModalImagen()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <form id="formImagen" enctype="multipart/form-data">
+                    <input type="hidden" id="imagenPremioId" value="">
+                    
+                    <div class="mb-4">
+                        <label for="imagenFile" class="block text-sm font-medium text-gray-700 mb-2">
+                            Seleccionar Imagen
+                        </label>
+                        <input type="file" id="imagenFile" name="imagen" accept="image/*" required
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        <p class="text-xs text-gray-500 mt-1">Formatos: PNG, JPG, JPEG, GIF, WEBP (máx. 16MB)</p>
+                    </div>
+                    
+                    <div class="flex gap-3">
+                        <button type="button" onclick="cerrarModalImagen()" 
+                                class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="submit" 
+                                class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                            Subir Imagen
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript para gestión de premios -->
+<script>
+// Variables globales
+let premioEditando = null;
+
+// Función para abrir modal de nuevo premio
+function abrirModalNuevoPremio() {
+    document.getElementById('modalTitulo').textContent = 'Nuevo Premio';
+    document.getElementById('btnGuardarTexto').textContent = 'Crear Premio';
+    document.getElementById('formPremio').reset();
+    document.getElementById('premioId').value = '';
+    premioEditando = null;
+    document.getElementById('modalPremio').classList.remove('hidden');
+}
+
+// Función para editar premio
+async function editarPremio(premioId) {
+    try {
+        const response = await fetch(`/admin/premio/${premioId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const premio = data.premio;
+            document.getElementById('modalTitulo').textContent = 'Editar Premio';
+            document.getElementById('btnGuardarTexto').textContent = 'Actualizar Premio';
+            document.getElementById('premioId').value = premio.id;
+            document.getElementById('nombrePremio').value = premio.nombre;
+            document.getElementById('descripcionPremio').value = premio.descripcion || '';
+            document.getElementById('ordenPremio').value = premio.orden;
+            premioEditando = premioId;
+            document.getElementById('modalPremio').classList.remove('hidden');
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error al cargar premio:', error);
+        alert('Error al cargar los datos del premio');
+    }
+}
+
+// Función para cerrar modal de premio
+function cerrarModalPremio() {
+    document.getElementById('modalPremio').classList.add('hidden');
+    premioEditando = null;
+}
+
+// Función para manejar el envío del formulario de premio
+document.getElementById('formPremio').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+        nombre: formData.get('nombre'),
+        descripcion: formData.get('descripcion'),
+        orden: parseInt(formData.get('orden'))
+    };
+    
+    try {
+        let url, method;
+        if (premioEditando) {
+            url = `/admin/premio/${premioEditando}`;
+            method = 'PUT';
+        } else {
+            url = '/admin/premio';
+            method = 'POST';
+        }
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(result.message);
+            cerrarModalPremio();
+            location.reload(); // Recargar la página para ver los cambios
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al guardar el premio');
+    }
+});
+
+// Función para eliminar premio
+async function eliminarPremio(premioId, nombrePremio) {
+    if (!confirm(`¿Estás seguro de eliminar el premio "${nombrePremio}"?\n\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/admin/premio/${premioId}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert(data.message);
+            location.reload(); // Recargar la página para ver los cambios
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al eliminar el premio');
+    }
+}
+
+// Función para editar imagen
+function editarImagen(premioId) {
+    document.getElementById('imagenPremioId').value = premioId;
+    document.getElementById('modalImagen').classList.remove('hidden');
+}
+
+// Función para cerrar modal de imagen
+function cerrarModalImagen() {
+    document.getElementById('modalImagen').classList.add('hidden');
+    document.getElementById('formImagen').reset();
+}
+
+// Función para manejar el envío del formulario de imagen
+document.getElementById('formImagen').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const premioId = document.getElementById('imagenPremioId').value;
+    
+    try {
+        const response = await fetch(`/admin/premio/${premioId}/imagen`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(result.message);
+            cerrarModalImagen();
+            location.reload(); // Recargar la página para ver los cambios
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al subir la imagen');
+    }
+});
+
+// Cerrar modales al hacer clic fuera de ellos
+document.getElementById('modalPremio').addEventListener('click', function(e) {
+    if (e.target === this) {
+        cerrarModalPremio();
+    }
+});
+
+document.getElementById('modalImagen').addEventListener('click', function(e) {
+    if (e.target === this) {
+        cerrarModalImagen();
+    }
+});
+
+// Cerrar modales con la tecla Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        cerrarModalPremio();
+        cerrarModalImagen();
+    }
+});
+</script>
+{% endif %}
+
+<style>
+.hover-scale {
+    transition: transform 0.3s ease;
+}
+
+.hover-scale:hover {
+    transform: scale(1.02);
+}
+
+/* Animaciones para los modales */
+#modalPremio, #modalImagen {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Estilos para los botones de administración */
+.admin-button {
+    transition: all 0.2s ease;
+}
+
+.admin-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+</style>
+{% endblock %}

@@ -1,0 +1,716 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Sorteos | Admin{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">
+            <i class="fas fa-trophy text-orange-500 mr-3"></i>
+            Gestión de Sorteos
+        </h1>
+        <p class="text-gray-600">Administra sorteos, cierra y asigna ganadores</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="bg-white rounded-lg shadow-lg mb-6">
+        <div class="border-b border-gray-200">
+            <nav class="flex">
+                <button onclick="cambiarTab('listado')" 
+                        class="tab-button py-4 px-6 text-gray-600 hover:text-orange-500 font-semibold border-b-2 border-transparent hover:border-orange-500 transition-colors"
+                        id="tab-listado">
+                    <i class="fas fa-list mr-2"></i>
+                    Listado de Sorteos
+                </button>
+                <button onclick="cambiarTab('ganadores')" 
+                        class="tab-button py-4 px-6 text-gray-600 hover:text-orange-500 font-semibold border-b-2 border-transparent hover:border-orange-500 transition-colors"
+                        id="tab-ganadores">
+                    <i class="fas fa-award mr-2"></i>
+                    Asignar Ganador Manual
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Tab: Listado de Sorteos -->
+    <div id="content-listado" class="tab-content">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">
+                    <i class="fas fa-calendar-alt text-blue-500 mr-2"></i>
+                    Sorteos Registrados
+                </h2>
+                <div class="flex gap-3">
+                    <button onclick="limpiarSorteosAntiguos()"
+                            class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        <i class="fas fa-broom mr-2"></i>
+                        Limpiar Antiguos
+                    </button>
+                    <button onclick="crearNuevoSorteo()"
+                            class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        <i class="fas fa-plus mr-2"></i>
+                        Nuevo Sorteo
+                    </button>
+                </div>
+            </div>
+
+            <!-- Lista de Sorteos -->
+            <div id="listaSorteos" class="space-y-4">
+                <div class="text-center py-8">
+                    <i class="fas fa-spinner fa-spin text-4xl text-gray-400 mb-2"></i>
+                    <p class="text-gray-500">Cargando sorteos...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Asignar Ganador Manual -->
+    <div id="content-ganadores" class="tab-content hidden">
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-folder text-orange-500 mr-2"></i>
+                    Asignar Ganador Manual
+                </h2>
+                <p class="text-gray-600">Ingresa el número de ticket ganador del ánfora</p>
+            </div>
+
+            <!-- Selector de Sorteo -->
+            <div class="mb-6">
+                <label class="block text-gray-700 font-semibold mb-2">Sorteo</label>
+                <select id="sorteoSelect" onchange="cargarDatosSorteo()" 
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none">
+                    <option value="">Seleccione sorteo...</option>
+                </select>
+            </div>
+
+            <!-- Formulario de Asignación -->
+            <div id="formularioAsignacion" class="hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- Número de Ticket -->
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Número de Ticket</label>
+                        <input type="text" 
+                               id="numeroTicket" 
+                               placeholder="Ej: 1234"
+                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none">
+                        <p class="text-sm text-gray-500 mt-1">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Solo números de 4 dígitos
+                        </p>
+                    </div>
+
+                    <!-- Premio -->
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Premio</label>
+                        <select id="premioSelect" 
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none">
+                            <option value="">Seleccione premio...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Botón Asignar -->
+                <button onclick="asignarGanador()" 
+                        id="btnAsignar"
+                        class="w-full bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 shadow-lg">
+                    <i class="fas fa-star mr-2"></i>
+                    Asignar Ganador
+                </button>
+            </div>
+
+            <!-- Info del Sorteo Seleccionado -->
+            <div id="infoSorteo" class="hidden mt-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+                <p class="text-sm text-blue-800">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <span id="infoSorteoTexto"></span>
+                </p>
+            </div>
+
+            <!-- Ganadores del Sorteo Activo -->
+            <div id="ganadoresActuales" class="mt-8 hidden">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-users text-yellow-500 mr-2"></i>
+                    Ganadores del Sorteo Activo
+                </h3>
+                <div id="listaGanadoresActuales" class="space-y-3">
+                    <!-- Se llenará dinámicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div id="modalConfirmacion" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+        <div class="text-center">
+            <i class="fas fa-check-circle text-green-500 text-6xl mb-4"></i>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">¡Ganador Asignado!</h3>
+            <p id="mensajeConfirmacion" class="text-gray-600 mb-6"></p>
+            <button onclick="cerrarModal()" 
+                    class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nuevo Sorteo -->
+<div id="modalNuevoSorteo" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg p-8 max-w-lg w-full mx-4">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-bold text-gray-800">
+                <i class="fas fa-plus-circle text-green-500 mr-2"></i>
+                Crear Nuevo Sorteo
+            </h3>
+            <button onclick="cerrarModalNuevoSorteo()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-2xl"></i>
+            </button>
+        </div>
+        
+        <form id="formNuevoSorteo" onsubmit="guardarNuevoSorteo(event)">
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">Nombre del Sorteo *</label>
+                <input type="text" 
+                       id="nombreSorteo" 
+                       placeholder="Ej: Sorteo Navidad 2025"
+                       required
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">Descripción (opcional)</label>
+                <textarea id="descripcionSorteo" 
+                          rows="3"
+                          placeholder="Descripción del sorteo..."
+                          class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"></textarea>
+            </div>
+            
+            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6">
+                <p class="text-sm text-yellow-800">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <strong>Nota:</strong> Al crear un sorteo, se cerrará automáticamente el sorteo activo actual (si existe).
+                </p>
+            </div>
+            
+            <div class="flex gap-3">
+                <button type="button" 
+                        onclick="cerrarModalNuevoSorteo()"
+                        class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg transition-colors">
+                    Cancelar
+                </button>
+                <button type="submit" 
+                        id="btnGuardarSorteo"
+                        class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                    <i class="fas fa-check mr-2"></i>
+                    Crear Sorteo
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let sorteoActual = null;
+let premiosDisponibles = [];
+
+// Cambiar entre tabs
+function cambiarTab(tab) {
+    // Ocultar todos los contenidos
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    
+    // Remover clase activa de todos los tabs
+    document.querySelectorAll('.tab-button').forEach(el => {
+        el.classList.remove('text-orange-500', 'border-orange-500');
+        el.classList.add('text-gray-600', 'border-transparent');
+    });
+    
+    // Mostrar contenido seleccionado
+    document.getElementById(`content-${tab}`).classList.remove('hidden');
+    
+    // Activar tab seleccionado
+    const tabButton = document.getElementById(`tab-${tab}`);
+    tabButton.classList.remove('text-gray-600', 'border-transparent');
+    tabButton.classList.add('text-orange-500', 'border-orange-500');
+    
+    // Cargar datos según el tab
+    if (tab === 'listado') {
+        cargarSorteos();
+    } else if (tab === 'ganadores') {
+        cargarSorteosCerrados();
+        cargarPremios();
+    }
+}
+
+// Cargar todos los sorteos
+async function cargarSorteos() {
+    try {
+        const response = await fetch('/admin/sorteos');
+        const data = await response.json();
+        
+        if (data.success) {
+            mostrarSorteos(data.sorteos);
+        }
+    } catch (error) {
+        console.error('Error al cargar sorteos:', error);
+        showNotification('Error al cargar sorteos', 'error');
+    }
+}
+
+// Mostrar sorteos en la lista
+function mostrarSorteos(sorteos) {
+    const lista = document.getElementById('listaSorteos');
+    
+    if (sorteos.length === 0) {
+        lista.innerHTML = `
+            <div class="text-center py-8">
+                <i class="fas fa-inbox text-gray-400 text-4xl mb-2"></i>
+                <p class="text-gray-500">No hay sorteos registrados</p>
+            </div>
+        `;
+        return;
+    }
+    
+    lista.innerHTML = sorteos.map(sorteo => {
+        const estadoClass = {
+            'activo': 'bg-green-100 text-green-800',
+            'cerrado': 'bg-yellow-100 text-yellow-800',
+            'completado': 'bg-blue-100 text-blue-800',
+            'cancelado': 'bg-red-100 text-red-800'
+        }[sorteo.estado] || 'bg-gray-100 text-gray-800';
+        
+        return `
+            <div class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">${sorteo.nombre}</h3>
+                        <div class="flex flex-wrap gap-3 mb-3">
+                            <span class="${estadoClass} px-3 py-1 rounded-full text-sm font-semibold">
+                                ${sorteo.estado.toUpperCase()}
+                            </span>
+                            <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
+                                <i class="fas fa-users mr-1"></i>
+                                ${sorteo.total_participantes} participantes
+                            </span>
+                            <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm">
+                                <i class="fas fa-trophy mr-1"></i>
+                                ${sorteo.total_ganadores} ganadores
+                            </span>
+                        </div>
+                        <p class="text-gray-600 text-sm">
+                            <i class="fas fa-calendar mr-1"></i>
+                            Fecha: ${new Date(sorteo.fecha_sorteo).toLocaleDateString('es-ES')}
+                        </p>
+                    </div>
+                    <div class="flex gap-2">
+                        ${sorteo.estado === 'activo' ? `
+                            <button onclick="cerrarSorteo(${sorteo.id})" 
+                                    class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                                <i class="fas fa-lock mr-1"></i>
+                                Cerrar
+                            </button>
+                        ` : ''}
+                        ${sorteo.estado === 'cerrado' ? `
+                            <button onclick="verGanadores(${sorteo.id})" 
+                                    class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                                <i class="fas fa-eye mr-1"></i>
+                                Ver Ganadores
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Cargar sorteos cerrados para asignación
+async function cargarSorteosCerrados() {
+    try {
+        const response = await fetch('/admin/sorteos');
+        const data = await response.json();
+        
+        if (data.success) {
+            const todosLosSorteos = data.sorteos;
+            const select = document.getElementById('sorteoSelect');
+            
+            select.innerHTML = '<option value="">Seleccione sorteo...</option>' +
+                todosLosSorteos.map(s => `
+                    <option value="${s.id}">${s.nombre} [${s.estado.toUpperCase()}] (${s.total_participantes} participantes)</option>
+                `).join('');
+        }
+    } catch (error) {
+        console.error('Error al cargar sorteos:', error);
+    }
+}
+
+// Cargar premios disponibles
+async function cargarPremios() {
+    try {
+        const response = await fetch('/admin/premios');
+        const data = await response.json();
+        
+        if (data.success) {
+            premiosDisponibles = data.premios;
+        }
+    } catch (error) {
+        console.error('Error al cargar premios:', error);
+    }
+}
+
+// Cargar datos del sorteo seleccionado
+async function cargarDatosSorteo() {
+    const sorteoId = document.getElementById('sorteoSelect').value;
+    
+    if (!sorteoId) {
+        document.getElementById('formularioAsignacion').classList.add('hidden');
+        document.getElementById('infoSorteo').classList.add('hidden');
+        document.getElementById('ganadoresActuales').classList.add('hidden');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/admin/sorteo/${sorteoId}/registrar-ganadores`);
+        const data = await response.json();
+        
+        if (data.success) {
+            sorteoActual = data.sorteo;
+            mostrarFormularioAsignacion(data);
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error al cargar datos del sorteo', 'error');
+    }
+}
+
+// ✅ NUEVO: Mostrar formulario permitiendo MÚLTIPLES ganadores SIN RESTRICCIÓN
+function mostrarFormularioAsignacion(data) {
+    document.getElementById('formularioAsignacion').classList.remove('hidden');
+    document.getElementById('infoSorteo').classList.remove('hidden');
+    
+    // Info del sorteo
+    document.getElementById('infoSorteoTexto').textContent = 
+        `Sorteo: ${data.sorteo.nombre} | Participantes aprobados: ${data.participantes.length}`;
+    
+    // ✅ CORREGIDO: TODOS los premios siempre disponibles para agregar ganadores
+    const premioSelect = document.getElementById('premioSelect');
+    
+    // Generar opciones para TODOS los premios - SIN DESHABILITAR NINGUNO
+    const opcionesPremios = data.premios.map(p => {
+        const ganadores_asignados = parseInt(p.ganadores_asignados) || 0;
+        
+        // ✅ NUEVO: Mostrar contador simple de ganadores sin restricción
+        let indicador = '';
+        if (ganadores_asignados > 0) {
+            indicador = ` [${ganadores_asignados} ganadores]`;
+        }
+        
+        return {
+            html: `<option value="${p.id}">${p.orden}. ${p.nombre}${indicador}</option>`,
+            disponible: true
+        };
+    });
+    
+    // Construir el select - TODOS los premios SIEMPRE disponibles
+    premioSelect.innerHTML = '<option value="">Seleccione premio...</option>' +
+        opcionesPremios.map(p => p.html).join('');
+    
+    // ✅ NUNCA deshabilitar el botón - siempre se puede agregar ganadores
+    document.getElementById('btnAsignar').disabled = false;
+    
+    // ✅ Mostrar ganadores existentes agrupados por premio
+    if (data.ganadores_existentes.length > 0) {
+        document.getElementById('ganadoresActuales').classList.remove('hidden');
+        
+        // Agrupar ganadores por premio
+        const ganadoresPorPremio = {};
+        data.ganadores_existentes.forEach(g => {
+            if (!ganadoresPorPremio[g.premio_nombre]) {
+                ganadoresPorPremio[g.premio_nombre] = [];
+            }
+            ganadoresPorPremio[g.premio_nombre].push(g);
+        });
+        
+        // Renderizar ganadores agrupados
+        const htmlGanadores = Object.keys(ganadoresPorPremio).map(premioNombre => {
+            const ganadores = ganadoresPorPremio[premioNombre];
+            const cantidadGanadores = ganadores.length;
+            const icono = cantidadGanadores > 1 ? 'fa-trophy' : 'fa-star';
+            const colorBg = cantidadGanadores > 1 ? 'bg-orange-50 border-orange-200' : 'bg-yellow-50 border-yellow-200';
+            const colorIcono = cantidadGanadores > 1 ? 'text-orange-500' : 'text-yellow-500';
+            
+            return `
+                <div class="${colorBg} border rounded-lg p-4 mb-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center">
+                            <i class="fas ${icono} ${colorIcono} text-xl mr-2"></i>
+                            <p class="font-bold text-gray-800">${premioNombre}</p>
+                        </div>
+                        <span class="text-xs bg-gray-200 px-2 py-1 rounded">
+                            ${cantidadGanadores} ganador${cantidadGanadores > 1 ? 'es' : ''}
+                        </span>
+                    </div>
+                    <div class="pl-8 space-y-1">
+                        ${ganadores.map(g => `
+                            <p class="text-sm text-gray-600">
+                                ➢ Ticket #${g.numero_participacion} - ${g.nombres} ${g.apellidos}
+                            </p>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        document.getElementById('listaGanadoresActuales').innerHTML = htmlGanadores;
+    } else {
+        document.getElementById('ganadoresActuales').classList.add('hidden');
+    }
+}
+
+// Asignar ganador
+async function asignarGanador() {
+    const sorteoId = document.getElementById('sorteoSelect').value;
+    const numeroTicket = document.getElementById('numeroTicket').value.trim();
+    const premioId = document.getElementById('premioSelect').value;
+    
+    // Validaciones
+    if (!sorteoId) {
+        showNotification('Selecciona un sorteo', 'error');
+        return;
+    }
+    
+    if (!numeroTicket) {
+        showNotification('Ingresa el número de ticket', 'error');
+        return;
+    }
+    
+    if (!/^\d{4}$/.test(numeroTicket)) {
+        showNotification('El ticket debe tener 4 dígitos', 'error');
+        return;
+    }
+    
+    if (!premioId) {
+        showNotification('Selecciona un premio', 'error');
+        return;
+    }
+    
+    // Deshabilitar botón
+    const btn = document.getElementById('btnAsignar');
+    const textoOriginal = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Asignando...';
+    
+    try {
+        const response = await fetch(`/admin/sorteo/${sorteoId}/registrar-ganadores`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                numero_ticket: numeroTicket,
+                premio_id: parseInt(premioId)
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('mensajeConfirmacion').textContent = data.message;
+            document.getElementById('modalConfirmacion').classList.remove('hidden');
+            
+            // Limpiar formulario
+            document.getElementById('numeroTicket').value = '';
+            document.getElementById('premioSelect').value = '';
+            
+            // Recargar datos
+            await cargarDatosSorteo();
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error al asignar ganador', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = textoOriginal;
+    }
+}
+
+// Cerrar sorteo
+async function cerrarSorteo(sorteoId) {
+    if (!confirm('¿Estás seguro de cerrar este sorteo? No podrás agregar más participantes.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/admin/sorteo/${sorteoId}/cerrar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            cargarSorteos();
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error al cerrar sorteo', 'error');
+    }
+}
+
+// Ver ganadores
+function verGanadores(sorteoId) {
+    window.location.href = `/sorteos/${sorteoId}/ganadores/ver`;
+}
+
+// Cerrar modal
+function cerrarModal() {
+    document.getElementById('modalConfirmacion').classList.add('hidden');
+}
+
+// Abrir modal para crear sorteo
+function crearNuevoSorteo() {
+    document.getElementById('modalNuevoSorteo').classList.remove('hidden');
+    document.getElementById('nombreSorteo').focus();
+}
+
+// Cerrar modal de nuevo sorteo
+function cerrarModalNuevoSorteo() {
+    document.getElementById('modalNuevoSorteo').classList.add('hidden');
+    document.getElementById('formNuevoSorteo').reset();
+}
+
+// Guardar nuevo sorteo
+async function guardarNuevoSorteo(event) {
+    event.preventDefault();
+    
+    const nombre = document.getElementById('nombreSorteo').value.trim();
+    const descripcion = document.getElementById('descripcionSorteo').value.trim();
+    
+    if (!nombre) {
+        showNotification('El nombre del sorteo es obligatorio', 'error');
+        return;
+    }
+    
+    const btn = document.getElementById('btnGuardarSorteo');
+    const textoOriginal = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Creando...';
+    
+    try {
+        const response = await fetch('/admin/sorteo/nuevo', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                nombre: nombre,
+                descripcion: descripcion
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            cerrarModalNuevoSorteo();
+            await cargarSorteos();
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error al crear sorteo', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = textoOriginal;
+    }
+}
+
+// Limpiar sorteos antiguos (dejar solo los 2 más recientes)
+async function limpiarSorteosAntiguos() {
+    if (!confirm('⚠️ ¿Estás seguro de limpiar sorteos antiguos?\n\nSe mantendrán los 2 sorteos más recientes.\nLos sorteos con ganadores NO se eliminarán (por transparencia).')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/admin/sorteos/limpiar-antiguos', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Mostrar mensaje detallado
+            let mensaje = data.message;
+
+            if (data.eliminados > 0) {
+                mensaje += `\n\n📊 Resumen:`;
+                mensaje += `\n✅ Eliminados: ${data.eliminados}`;
+                mensaje += `\n📁 Mantenidos: ${data.sorteos_mantenidos}`;
+                if (data.participantes_desvinculados > 0) {
+                    mensaje += `\n👥 Participantes desvinculados: ${data.participantes_desvinculados}`;
+                }
+            }
+
+            showNotification(data.message, 'success');
+
+            // Mostrar alerta con detalles
+            alert(mensaje);
+
+            // Recargar lista de sorteos
+            await cargarSorteos();
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error al limpiar sorteos antiguos', 'error');
+    }
+}
+
+// Notificaciones
+function showNotification(message, type = 'info') {
+    const colors = {
+        'success': 'bg-green-500',
+        'error': 'bg-red-500',
+        'info': 'bg-blue-500',
+        'warning': 'bg-yellow-500'
+    };
+
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-4 rounded-lg shadow-lg z-50 transform transition-transform duration-300`;
+    notification.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} mr-3"></i>
+            <span>${message}</span>
+        </div>
+    `;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.transform = 'translateX(400px)';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Inicializar
+document.addEventListener('DOMContentLoaded', function() {
+    cambiarTab('listado');
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Sorteos y Ganadores | RAPI RIFA{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Encabezado -->
+    <div class="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-2xl shadow-2xl p-8 mb-8 text-white text-center">
+        <i class="fas fa-trophy text-6xl mb-4"></i>
+        <h1 class="text-4xl font-bold mb-2">Sorteos y Ganadores</h1>
+        <p class="text-xl opacity-90">Consulta los resultados de nuestros sorteos</p>
+    </div>
+    
+    <!-- Lista de Sorteos -->
+    {% if sorteos %}
+    <div class="grid gap-6">
+        {% for sorteo in sorteos %}
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow">
+            <div class="p-6">
+                <div class="flex items-center justify-between flex-wrap gap-4 mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                            <i class="fas fa-calendar-check text-orange-500 mr-2"></i>
+                            {{ sorteo.nombre }}
+                        </h2>
+                        <p class="text-gray-600">
+                            <i class="fas fa-calendar-alt mr-2"></i>
+                            {% if sorteo.fecha_sorteo %}
+                                {{ sorteo.fecha_sorteo|as_date }}
+                            {% else %}
+                                Fecha por definir
+                            {% endif %}
+                        </p>
+                        {% if sorteo.descripcion %}
+                        <p class="text-gray-600 mt-2 text-sm">{{ sorteo.descripcion }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Badge de Estado -->
+                    <div>
+                        {% if sorteo.estado == 'activo' %}
+                        <span class="bg-green-100 text-green-800 px-4 py-2 rounded-full font-semibold">
+                            <i class="fas fa-circle text-green-500 mr-2 animate-pulse"></i>
+                            Activo
+                        </span>
+                        {% elif sorteo.estado == 'cerrado' %}
+                        <span class="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full font-semibold">
+                            <i class="fas fa-lock mr-2"></i>
+                            Cerrado
+                        </span>
+                        {% elif sorteo.estado == 'completado' %}
+                        <span class="bg-blue-100 text-blue-800 px-4 py-2 rounded-full font-semibold">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            Completado
+                        </span>
+                        {% else %}
+                        <span class="bg-gray-100 text-gray-800 px-4 py-2 rounded-full font-semibold">
+                            {{ sorteo.estado|capitalize }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Estadísticas -->
+                <div class="grid grid-cols-1 gap-4 mb-4">
+                    <div class="bg-yellow-50 rounded-lg p-4 text-center">
+                        <p class="text-3xl font-bold text-yellow-600">{{ sorteo.total_ganadores }}</p>
+                        <p class="text-sm text-gray-600">Premio(s) Asignado(s)</p>
+                    </div>
+                </div>
+                
+                <!-- Botón para ver ganadores -->
+                {% if sorteo.total_ganadores > 0 %}
+                <div class="flex justify-center">
+                    <a href="{{ url_for('ver_ganadores_sorteo_publico', sorteo_id=sorteo.id) }}" 
+                       class="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-3 px-8 rounded-lg transition-all transform hover:scale-105 shadow-lg">
+                        <i class="fas fa-trophy mr-2"></i>
+                        Ver Ganadores de este Sorteo
+                    </a>
+                </div>
+                {% else %}
+                <div class="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 text-center">
+                    <i class="fas fa-hourglass-half text-gray-400 text-2xl mb-2"></i>
+                    <p class="text-gray-600">Aún no hay ganadores registrados para este sorteo</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Sin Sorteos -->
+    <div class="bg-white rounded-2xl shadow-xl p-12 text-center">
+        <i class="fas fa-calendar-times text-gray-400 text-6xl mb-4"></i>
+        <h3 class="text-2xl font-bold text-gray-700 mb-2">No hay sorteos disponibles</h3>
+        <p class="text-gray-600">Pronto habrá nuevos sorteos. ¡Mantente atento!</p>
+    </div>
+    {% endif %}
+    
+    <!-- Información adicional -->
+    <div class="mt-8 bg-blue-50 border-l-4 border-blue-500 p-6 rounded-lg">
+        <div class="flex items-start">
+            <i class="fas fa-info-circle text-blue-500 text-2xl mr-4 mt-1"></i>
+            <div>
+                <h3 class="text-lg font-bold text-gray-800 mb-2">¿Cómo verifico si gané?</h3>
+                <ol class="list-decimal list-inside text-gray-700 space-y-2">
+                    <li>Haz clic en "Ver Ganadores" del sorteo que te interesa</li>
+                    <li>Busca tu número de ticket en la lista de ganadores</li>
+                    <li>También puedes verificar en la sección "Mis Tickets" con tu documento</li>
+                    <li>Si ganaste, te contactaremos por WhatsApp</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Botones de navegación -->
+    <div class="flex flex-wrap justify-center gap-4 mt-8">
+        <a href="{{ url_for('index') }}" 
+           class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-lg transition-colors">
+            <i class="fas fa-home mr-2"></i>
+            Volver al Inicio
+        </a>
+        <a href="{{ url_for('mis_tickets') }}" 
+           class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-lg transition-colors">
+            <i class="fas fa-ticket-alt mr-2"></i>
+            Ver Mis Tickets
+        </a>
+    </div>
+</div>
+{% endblock %}

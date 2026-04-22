@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - RAPI RIFA</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .admin-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .login-animation {
+            animation: slideInUp 0.8s ease-out;
+        }
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        .input-glow:focus {
+            box-shadow: 0 0 20px rgba(129, 140, 248, 0.5);
+            border-color: rgba(129, 140, 248, 0.8);
+        }
+    </style>
+</head>
+<body class="admin-gradient min-h-screen flex items-center justify-center">
+    
+    <!-- Contenedor principal -->
+    <div class="w-full max-w-md mx-4">
+        
+        <!-- Logo y título -->
+        <div class="text-center mb-8 login-animation">
+            <div class="inline-block p-4 glass-effect rounded-full mb-6">
+                <i class="fas fa-crown text-4xl text-yellow-300 pulse-animation"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-white mb-2">PANEL ADMINISTRATIVO</h1>
+            <p class="text-blue-100">RAPI RIFA</p>
+            <div class="inline-block bg-gradient-to-r from-yellow-400 to-yellow-600 text-gray-800 px-3 py-1 rounded-full text-xs font-bold mt-2">
+                <i class="fas fa-shield-alt mr-1"></i>
+                ACCESO RESTRINGIDO
+            </div>
+        </div>
+        
+        <!-- Formulario de login -->
+        <div class="glass-effect rounded-2xl p-8 login-animation shadow-2xl">
+            <form id="loginForm">
+                <!-- Campo de usuario -->
+                <div class="mb-6">
+                    <label class="block text-white font-semibold mb-2">
+                        <i class="fas fa-user mr-2"></i>
+                        Usuario Administrador
+                    </label>
+                    <input type="text" 
+                           name="username" 
+                           placeholder="Ingrese su usuario"
+                           required
+                           class="w-full p-4 bg-white/20 border border-white/30 rounded-xl text-white placeholder-white/70 input-glow transition-all duration-300 focus:outline-none">
+                </div>
+                
+                <!-- Campo de contraseña -->
+                <div class="mb-6">
+                    <label class="block text-white font-semibold mb-2">
+                        <i class="fas fa-lock mr-2"></i>
+                        Contraseña Segura
+                    </label>
+                    <div class="relative">
+                        <input type="password" 
+                               name="password" 
+                               id="passwordField"
+                               placeholder="Ingrese su contraseña"
+                               required
+                               class="w-full p-4 bg-white/20 border border-white/30 rounded-xl text-white placeholder-white/70 input-glow transition-all duration-300 focus:outline-none pr-12">
+                        <button type="button" 
+                                onclick="togglePassword()"
+                                class="absolute right-4 top-1/2 transform -translate-y-1/2 text-white/70 hover:text-white transition-colors">
+                            <i class="fas fa-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Checkbox recordar -->
+                <div class="mb-6">
+                    <label class="flex items-center text-white cursor-pointer">
+                        <input type="checkbox" 
+                               name="remember" 
+                               class="mr-3 w-4 h-4 accent-blue-500">
+                        <span class="text-sm">Recordar mi sesión</span>
+                    </label>
+                </div>
+                
+                <!-- Botón de login -->
+                <button type="submit" 
+                        class="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    <i class="fas fa-sign-in-alt mr-2"></i>
+                    INGRESAR AL SISTEMA
+                </button>
+            </form>
+            
+            <!-- Enlaces adicionales -->
+            <div class="mt-6 text-center">
+                <a href="{{ url_for('index') }}" 
+                   class="text-blue-200 hover:text-white transition-colors text-sm">
+                    <i class="fas fa-home mr-1"></i>
+                    Volver al sitio web
+                </a>
+            </div>
+        </div>
+        
+        <!-- Información de seguridad -->
+        
+    </div>
+    
+    <!-- Modal de error -->
+    <div id="errorModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 flex items-center justify-center">
+        <div class="glass-effect rounded-2xl p-6 m-4 max-w-sm w-full text-center">
+            <div class="text-red-400 mb-4">
+                <i class="fas fa-exclamation-triangle text-4xl"></i>
+            </div>
+            <h3 class="text-white font-bold mb-2" id="errorTitle">Error de Acceso</h3>
+            <p class="text-white/80 mb-4" id="errorMessage">Credenciales incorrectas</p>
+            <button onclick="closeErrorModal()" 
+                    class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition-colors">
+                <i class="fas fa-times mr-2"></i>
+                Cerrar
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // Alternar visibilidad de contraseña
+        function togglePassword() {
+            const passwordField = document.getElementById('passwordField');
+            const eyeIcon = document.getElementById('eyeIcon');
+            
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                eyeIcon.className = 'fas fa-eye-slash';
+            } else {
+                passwordField.type = 'password';
+                eyeIcon.className = 'fas fa-eye';
+            }
+        }
+        
+        // Manejar envío del formulario
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitButton = this.querySelector('button[type="submit"]');
+            
+            // Mostrar estado de carga
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Verificando...';
+            submitButton.disabled = true;
+            
+            try {
+                const response = await fetch('/admin/login', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    submitButton.innerHTML = '<i class="fas fa-check mr-2"></i>¡Acceso autorizado!';
+                    submitButton.className = 'w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300';
+                    
+                    setTimeout(() => {
+                        window.location.href = '/admin';
+                    }, 1000);
+                } else {
+                    showErrorModal('Acceso Denegado', result.message);
+                    resetForm();
+                }
+            } catch (error) {
+                showErrorModal('Error de Conexión', 'No se pudo conectar con el servidor');
+                resetForm();
+            }
+        });
+        
+        function resetForm() {
+            const submitButton = document.querySelector('button[type="submit"]');
+            submitButton.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>INGRESAR AL SISTEMA';
+            submitButton.disabled = false;
+            submitButton.className = 'w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg';
+        }
+        
+        function showErrorModal(title, message) {
+            document.getElementById('errorTitle').textContent = title;
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorModal').classList.remove('hidden');
+        }
+        
+        function closeErrorModal() {
+            document.getElementById('errorModal').classList.add('hidden');
+        }
+        
+        // Cerrar modal al hacer clic fuera
+        document.getElementById('errorModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeErrorModal();
+            }
+        });
+        
+        // Auto-focus en el primer campo
+        document.querySelector('input[name="username"]').focus();
+    </script>
+</body>
+</html>
+

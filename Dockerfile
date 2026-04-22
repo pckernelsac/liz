@@ -1,0 +1,33 @@
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PORT=5000
+
+WORKDIR /app
+
+# Dependencias del sistema (Pillow necesita libjpeg/zlib; psycopg2-binary trae libpq)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        libjpeg-dev \
+        zlib1g-dev \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+
+# Carpetas que la app escribe en runtime
+RUN mkdir -p uploads logs static/img tmp
+
+EXPOSE 5000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -fsS "http://127.0.0.1:${PORT}/" || exit 1
+
+# En EasyPanel, define PORT en las env vars (5000 por defecto) y expón ese puerto.
+CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT}"]

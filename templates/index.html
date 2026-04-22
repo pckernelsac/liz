@@ -1,0 +1,739 @@
+{% extends "base.html" %}
+
+{% block title %}RAPI RIFA - Regístrate Aquí{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4">
+    <!-- Contenedor principal con logo animado y formulario -->
+    <div class="flex justify-center items-center min-h-screen">
+        <div class="relative">
+            <!-- Texto RAPI RIFA animado -->
+            <div class="text-center mb-8">
+                <div class="rapi-rifa-container">
+                    <h1 class="rapi-rifa-text">
+                        <span class="word word-1">RAPI</span>
+                        <span class="word word-2">RIFA</span>
+                    </h1>
+                    <!-- Efectos adicionales -->
+                    <div class="sparkle sparkle-1">✨</div>
+                    <div class="sparkle sparkle-2">💫</div>
+                    <div class="sparkle sparkle-3">⭐</div>
+                    <div class="sparkle sparkle-4">✨</div>
+                </div>
+            </div>
+            
+            <!-- Formulario de registro -->
+            <div id="formulario-registro" class="orange-gradient rounded-3xl p-8 form-shadow max-w-md mx-auto">
+                <!-- Título -->
+                <h2 class="text-white text-2xl font-bold text-center mb-6">
+                    ¡REGÍSTRATE AQUÍ!
+                </h2>
+                
+            <form id="registroForm" enctype="multipart/form-data" novalidate>
+                    <!-- Tipo de documento -->
+                    <div class="mb-4">
+                        <div class="flex space-x-4">
+                            <label class="flex items-center text-white font-medium">
+                                <input type="radio" name="tipo_documento" value="DNI" checked class="mr-2 text-orange-600">
+                                <span class="text-sm">Número de DNI</span>
+                                <i class="fas fa-check-circle ml-1 text-green-300"></i>
+                            </label>
+                            <label class="flex items-center text-white font-medium">
+                                <input type="radio" name="tipo_documento" value="CE" class="mr-2 text-orange-600">
+                                <span class="text-sm">C. de Extranjería</span>
+                                <i class="fas fa-check-circle ml-1 text-green-300"></i>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Número de documento -->
+                    <div class="mb-4">
+                        <input type="text" 
+                               name="numero_documento" 
+                               placeholder="Ingrese DNI" 
+                               required
+                               class="w-full p-3 rounded-full border-none outline-none text-gray-700 placeholder-gray-400 font-medium">
+                    </div>
+                    
+                    <!-- Nombres -->
+                    <div class="mb-4">
+                        <label class="block text-white font-semibold mb-2">Nombres</label>
+                        <input type="text" 
+                               name="nombres" 
+                               placeholder="Nombres" 
+                               required
+                               class="w-full p-3 rounded-full border-none outline-none text-gray-700 placeholder-gray-400 font-medium">
+                    </div>
+                    
+                    <!-- Apellidos -->
+                    <div class="mb-4">
+                        <label class="block text-white font-semibold mb-2">Apellidos</label>
+                        <input type="text" 
+                               name="apellidos" 
+                               placeholder="Apellidos" 
+                               required
+                               class="w-full p-3 rounded-full border-none outline-none text-gray-700 placeholder-gray-400 font-medium">
+                    </div>
+                    
+                    <!-- WhatsApp -->
+                    <div class="mb-4">
+                        <label class="block text-white font-semibold mb-2">Número de Whatsapp</label>
+                        <input type="tel" 
+                               name="whatsapp" 
+                               placeholder="Número WHATSAPP" 
+                               required
+                               class="w-full p-3 rounded-full border-none outline-none text-gray-700 placeholder-gray-400 font-medium">
+                    </div>
+                    
+
+                    
+                    <!-- Departamento -->
+                    <div class="mb-4">
+                        <label class="block text-white font-semibold mb-2">Selecciona tu departamento</label>
+                        <select name="departamento" 
+                                required
+                                class="w-full p-3 rounded-full border-none outline-none text-gray-700 font-medium bg-white">
+                            <option value="">Selecciona un departamento</option>
+                            {% for departamento in departamentos %}
+                            <option value="{{ departamento.nombre }}">{{ departamento.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Términos y condiciones -->
+                    <div class="mb-6">
+                        <label class="flex items-start text-white">
+                            <input type="checkbox" 
+                                   name="acepta_terminos" 
+                                   required
+                                   class="mr-3 mt-1 text-orange-600">
+                            <span class="text-sm font-medium">Acepto términos y condiciones</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Subir comprobante -->
+                    <div class="mb-6">
+                        <label class="block w-full">
+                            <input type="file" 
+                                   name="comprobante" 
+                                   accept=".jpg,.jpeg,.png,.gif,.pdf"
+                                   required class="hidden">
+                            <div id="botonSubirArchivo" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-full text-center cursor-pointer transition-colors">
+                                <i class="fas fa-upload mr-2"></i>
+                                SUBIR COMPROBANTE
+                            </div>
+                        </label>
+                        <p class="text-white text-xs mt-2 text-center">Formatos permitidos: JPG, PNG, PDF (Max: 6MB)</p>
+                    </div>
+                    
+                    <!-- Botón de registro -->
+                    <div class="text-center">
+                        <button type="submit" 
+                                class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full transition-colors">
+                            <i class="fas fa-user-plus mr-2"></i>
+                            REGISTRARME
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Mensaje de responsabilidad -->
+                <div class="mt-6 text-center">
+                    <p class="text-white text-xs">
+                        Participa de manera responsable, solo válido para mayores de edad +18
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let form, submitBtn, fileInput, fileLabel;
+
+document.addEventListener('DOMContentLoaded', function() {
+    form = document.getElementById('registroForm');
+    if (!form) {
+        console.error("¡ERROR CRÍTICO! No se encontró el formulario con id='registroForm'.");
+        return;
+    }
+    submitBtn = form.querySelector('button[type="submit"]');
+    fileInput = form.querySelector('input[name="comprobante"]');
+    fileLabel = document.getElementById('botonSubirArchivo'); 
+    initializeEventListeners();
+});
+
+function initializeEventListeners() {
+    form.addEventListener('submit', handleFormSubmit);
+    document.querySelectorAll('input[name="tipo_documento"]').forEach(radio => {
+        radio.addEventListener('change', handleDocumentTypeChange);
+    });
+    fileInput.addEventListener('change', handleFileSelection);
+    form.querySelector('input[name="whatsapp"]').addEventListener('input', validateWhatsapp);
+    form.querySelector('input[name="numero_documento"]').addEventListener('input', validateDocument);
+}
+
+async function handleFormSubmit(e) {
+    e.preventDefault();
+    if (!validateForm()) {
+        return; 
+    }
+    const formData = new FormData(form);
+    setSubmitButtonLoading();
+    try {
+        const response = await fetch('/registrar', { method: 'POST', body: formData });
+        const result = await response.json();
+        if (result.success) {
+            handleSuccessfulRegistration(result);
+        } else {
+            showModal('Error en el Registro', result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error en el registro:', error);
+        showModal('Error', 'Ocurrió un error al procesar el registro. Por favor intenta nuevamente.', 'error');
+    } finally {
+        restoreSubmitButton();
+    }
+}
+
+function validateForm() {
+    const numeroDocumento = form.querySelector('[name="numero_documento"]').value.trim();
+    const nombres = form.querySelector('[name="nombres"]').value.trim();
+    const apellidos = form.querySelector('[name="apellidos"]').value.trim();
+    const whatsapp = form.querySelector('[name="whatsapp"]').value.trim();
+    const departamento = form.querySelector('[name="departamento"]').value;
+    const aceptaTerminos = form.querySelector('[name="acepta_terminos"]').checked;
+    const comprobanteFile = fileInput.files.length;
+
+    if (numeroDocumento === '') {
+        showModal('Campo Requerido', 'Por favor, ingresa tu número de documento.', 'error');
+        return false;
+    }
+    if (nombres === '') {
+        showModal('Campo Requerido', 'Por favor, ingresa tus nombres.', 'error');
+        return false;
+    }
+    if (apellidos === '') {
+        showModal('Campo Requerido', 'Por favor, ingresa tus apellidos.', 'error');
+        return false;
+    }
+    if (whatsapp === '') {
+        showModal('Campo Requerido', 'Por favor, ingresa tu número de WhatsApp.', 'error');
+        return false;
+    }
+    if (departamento === '') {
+        showModal('Campo Requerido', 'Debes seleccionar un departamento.', 'error');
+        return false;
+    }
+    if (!aceptaTerminos) {
+        showModal('Validación Requerida', 'Debes aceptar los términos y condiciones para continuar.', 'error');
+        return false;
+    }
+    if (comprobanteFile === 0) {
+        showModal('Validación Requerida', 'Falta subir tu comprobante de pago.', 'error');
+        return false;
+    }
+    return true;
+}
+
+function handleSuccessfulRegistration(result) {
+    let successMessage = result.message;
+    showModal('🎉 ¡Registro Exitoso!', successMessage, 'success');
+    resetFormAfterSuccess();
+    createConfetti();
+    celebrateLogo();
+}
+
+function setSubmitButtonLoading() {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>Registrando...`;
+}
+
+function restoreSubmitButton() {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = `<i class="fas fa-user-plus mr-2"></i>REGISTRARME`;
+}
+
+function resetFormAfterSuccess() {
+    form.reset();
+    restoreFileUploadButton();
+    form.querySelector('input[name="numero_documento"]').placeholder = 'Ingrese DNI';
+}
+
+function restoreFileUploadButton() {
+    fileLabel.innerHTML = '<i class="fas fa-upload mr-2"></i>SUBIR COMPROBANTE';
+    fileLabel.classList.remove('bg-green-600');
+    fileLabel.classList.add('bg-purple-600');
+}
+
+function handleDocumentTypeChange() {
+    const documentoInput = form.querySelector('input[name="numero_documento"]');
+    const selectedType = form.querySelector('input[name="tipo_documento"]:checked').value;
+    documentoInput.placeholder = selectedType === 'DNI' ? 'Ingrese DNI' : 'Ingrese Cédula de Extranjería';
+}
+
+function handleFileSelection() {
+    if (fileInput.files.length > 0) {
+        const fileName = fileInput.files[0].name;
+        const displayName = fileName.length > 20 ? fileName.substring(0, 20) + '...' : fileName;
+        fileLabel.innerHTML = `<i class="fas fa-check mr-2"></i>Archivo: ${displayName}`;
+        fileLabel.classList.add('bg-green-600');
+        fileLabel.classList.remove('bg-purple-600');
+    } else {
+        restoreFileUploadButton();
+    }
+}
+
+function validateWhatsapp() {
+    this.value = this.value.replace(/[^0-9+\-\s]/g, '');
+}
+
+function validateDocument() {
+    this.value = this.value.replace(/[^0-9]/g, '');
+}
+
+function showModal(title, message, type = 'info') {
+    const existingModal = document.querySelector('.modal-overlay');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
+    const icons = {
+        'success': '<i class="fas fa-check-circle text-green-500 text-4xl mb-4"></i>',
+        'error': '<i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>',
+        'info': '<i class="fas fa-info-circle text-blue-500 text-4xl mb-4"></i>'
+    };
+    const colors = {
+        'success': 'border-green-500',
+        'error': 'border-red-500',
+        'info': 'border-blue-500'
+    };
+    modal.innerHTML = `
+        <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 border-t-4 ${colors[type]} shadow-2xl transform animate-modal">
+            <div class="text-center">
+                ${icons[type]}
+                <h3 class="text-xl font-bold text-gray-800 mb-3">${title}</h3>
+                <p class="text-gray-600 mb-6 text-sm leading-relaxed whitespace-pre-line">${message}</p>
+                <button onclick="closeModal(this)" class="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-3 px-6 rounded-full transition-all transform hover:scale-105">
+                    <i class="fas fa-check mr-2"></i>Entendido
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    if (type === 'success') {
+        setTimeout(() => {
+            if (modal.parentNode) {
+                closeModal(modal.querySelector('button'));
+            }
+        }, 10000);
+    }
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeModal(modal.querySelector('button'));
+        }
+    });
+}
+
+function closeModal(button) {
+    const modal = button.closest('.modal-overlay');
+    if (modal) {
+        const content = modal.querySelector('.bg-white');
+        content.style.transform = 'scale(0.95)';
+        content.style.opacity = '0';
+        setTimeout(() => {
+            modal.remove();
+        }, 200);
+    }
+}
+
+function createConfetti() {
+    const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#f0932b', '#eb4d4b', '#6c5ce7', '#a55eea', '#26de81', '#fd79a8'];
+    const confettiCount = 150;
+    const confettiContainer = document.createElement('div');
+    confettiContainer.className = 'confetti-container';
+    confettiContainer.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999;
+    `;
+    document.body.appendChild(confettiContainer);
+    for (let i = 0; i < confettiCount; i++) {
+        setTimeout(() => {
+            createConfettiPiece(confettiContainer, colors);
+        }, i * 15);
+    }
+    const specialEmojis = ['🎉', '✨', '🎊', '🎆', '💫'];
+    for (let i = 0; i < 20; i++) {
+        setTimeout(() => {
+            createEmojiConfetti(confettiContainer, specialEmojis);
+        }, i * 100);
+    }
+    setTimeout(() => {
+        if (confettiContainer.parentNode) {
+            confettiContainer.remove();
+        }
+    }, 8000);
+}
+
+function createConfettiPiece(container, colors) {
+    const confetti = document.createElement('div');
+    const size = Math.random() * 8 + 4;
+    const leftPos = Math.random() * 100;
+    const animationDuration = Math.random() * 2 + 3;
+    const delay = Math.random() * 0.5;
+    confetti.style.cssText = `
+        position: absolute; top: -10px; left: ${leftPos}vw; width: ${size}px; height: ${size}px;
+        background: ${colors[Math.floor(Math.random() * colors.length)]};
+        border-radius: ${Math.random() > 0.5 ? '50%' : '0'};
+        animation: confetti-fall ${animationDuration}s linear ${delay}s forwards;
+        transform: rotate(${Math.random() * 360}deg);
+    `;
+    container.appendChild(confetti);
+}
+
+function createEmojiConfetti(container, emojis) {
+    const emoji = document.createElement('div');
+    emoji.innerHTML = emojis[Math.floor(Math.random() * emojis.length)];
+    emoji.style.cssText = `
+        position: absolute; top: -20px; left: ${Math.random() * 90 + 5}vw;
+        font-size: ${Math.random() * 20 + 15}px;
+        animation: emoji-fall ${Math.random() * 2 + 4}s linear forwards;
+    `;
+    container.appendChild(emoji);
+}
+
+function celebrateLogo() {
+    const logo = document.querySelector('.rapi-rifa-container');
+    if (!logo) return;
+    logo.classList.add('celebrating');
+    setTimeout(() => {
+        logo.classList.remove('celebrating');
+    }, 3000);
+}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ====================================
+   ESTILOS PARA EL LOGO "RAPI RIFA"
+   ==================================== */
+
+.rapi-rifa-container {
+    position: relative;
+    padding: 20px;
+    display: inline-block;
+}
+
+.rapi-rifa-text {
+    font-size: 4rem;
+    font-weight: 900;
+    text-align: center;
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+    padding: 20px 0;
+}
+
+.word {
+    display: inline-block;
+    background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 25%, #ffa726 50%, #ff8c42 75%, #ff6b35 100%);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-flow 3s ease infinite, text-bounce 2s ease-in-out infinite;
+    text-shadow: 0 0 30px rgba(255, 107, 53, 0.5);
+    position: relative;
+}
+
+.word-1 {
+    animation-delay: 0s;
+}
+
+.word-2 {
+    animation-delay: 0.3s;
+}
+
+/* Animación de gradiente fluido */
+@keyframes gradient-flow {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Animación de rebote suave */
+@keyframes text-bounce {
+    0%, 100% {
+        transform: translateY(0) scale(1);
+    }
+    25% {
+        transform: translateY(-10px) scale(1.05);
+    }
+    50% {
+        transform: translateY(-5px) scale(1.02);
+    }
+    75% {
+        transform: translateY(-8px) scale(1.03);
+    }
+}
+
+/* Estrellas brillantes alrededor */
+.sparkle {
+    position: absolute;
+    font-size: 2rem;
+    animation: sparkle-float 3s ease-in-out infinite;
+    pointer-events: none;
+    user-select: none;
+}
+
+.sparkle-1 {
+    top: 0;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.sparkle-2 {
+    top: 0;
+    right: 10%;
+    animation-delay: 0.5s;
+}
+
+.sparkle-3 {
+    bottom: 0;
+    left: 15%;
+    animation-delay: 1s;
+}
+
+.sparkle-4 {
+    bottom: 0;
+    right: 15%;
+    animation-delay: 1.5s;
+}
+
+@keyframes sparkle-float {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg) scale(1);
+        opacity: 0.6;
+    }
+    25% {
+        transform: translateY(-15px) rotate(90deg) scale(1.2);
+        opacity: 1;
+    }
+    50% {
+        transform: translateY(-20px) rotate(180deg) scale(0.8);
+        opacity: 0.8;
+    }
+    75% {
+        transform: translateY(-10px) rotate(270deg) scale(1.1);
+        opacity: 0.9;
+    }
+}
+
+/* Animación de celebración (cuando se registra alguien) */
+.rapi-rifa-container.celebrating .word {
+    animation: celebrate-jump 0.6s ease-in-out 3, gradient-flow 3s ease infinite;
+}
+
+@keyframes celebrate-jump {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg) scale(1);
+    }
+    50% {
+        transform: translateY(-30px) rotate(10deg) scale(1.2);
+    }
+}
+
+.rapi-rifa-container.celebrating .sparkle {
+    animation: sparkle-celebration 0.8s ease-in-out infinite;
+}
+
+@keyframes sparkle-celebration {
+    0%, 100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 0.5;
+    }
+    50% {
+        transform: scale(1.5) rotate(180deg);
+        opacity: 1;
+    }
+}
+
+/* Efecto de resplandor pulsante */
+.rapi-rifa-text::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120%;
+    height: 120%;
+    background: radial-gradient(circle, rgba(255, 165, 0, 0.3) 0%, transparent 70%);
+    animation: glow-pulse 2s ease-in-out infinite;
+    pointer-events: none;
+    z-index: -1;
+}
+
+@keyframes glow-pulse {
+    0%, 100% {
+        opacity: 0.5;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+}
+
+/* Responsive - Ajustar tamaño en móviles */
+@media (max-width: 768px) {
+    .rapi-rifa-text {
+        font-size: 2.5rem;
+        gap: 10px;
+    }
+    
+    .sparkle {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .rapi-rifa-text {
+        font-size: 2rem;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .sparkle {
+        font-size: 1.2rem;
+    }
+}
+
+/* ====================================
+   ESTILOS EXISTENTES DEL FORMULARIO
+   ==================================== */
+
+/* Animaciones para confeti */
+@keyframes confetti-fall {
+    0% {
+        transform: translateY(-100vh) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+@keyframes emoji-fall {
+    0% {
+        transform: translateY(-100vh) rotate(0deg) scale(0.5);
+        opacity: 1;
+    }
+    50% {
+        transform: translateY(50vh) rotate(360deg) scale(1.2);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh) rotate(720deg) scale(0.8);
+        opacity: 0;
+    }
+}
+
+/* Animación del modal */
+@keyframes animate-modal {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(-20px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.animate-modal {
+    animation: animate-modal 0.3s ease-out;
+}
+
+/* Efecto hover mejorado para botones */
+.transition-all {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Pulso sutil para el formulario */
+.form-shadow {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 30px rgba(255, 165, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.form-shadow:hover {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35), 0 0 50px rgba(255, 165, 0, 0.2);
+}
+
+/* Efecto de pulso para el botón de registro */
+.bg-green-600:hover {
+    animation: button-pulse 2s infinite;
+}
+
+@keyframes button-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    }
+}
+
+/* Mejoras visuales adicionales */
+.orange-gradient {
+    background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 50%, #ffa726 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.orange-gradient::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s;
+}
+
+.orange-gradient:hover::before {
+    left: 100%;
+}
+
+/* Mejoras para accesibilidad y UX */
+input:focus, select:focus {
+    outline: 2px solid #ffa726;
+    outline-offset: 2px;
+}
+
+.modal-overlay {
+    backdrop-filter: blur(4px);
+}
+
+/* Prevenir selección de texto en elementos animados */
+.rapi-rifa-container, .confetti-container {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+}
+</style>
+{% endblock %}

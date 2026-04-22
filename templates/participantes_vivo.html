@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Participantes en vivo - RAPI RIFA{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4">
+
+    <!-- Encabezado -->
+    <div class="text-center mb-8">
+        <h1 class="text-3xl md:text-4xl font-extrabold text-orange-600">
+            <i class="fas fa-users mr-2"></i>Participantes en vivo
+        </h1>
+        <p class="text-gray-600 mt-2">
+            Lista pública de participantes aprobados del sorteo activo.
+            Los datos personales se muestran ofuscados por privacidad.
+        </p>
+        {% if sorteo_activo %}
+        <div class="inline-flex items-center gap-2 mt-4 bg-green-100 text-green-800 px-4 py-2 rounded-full">
+            <span class="relative flex h-3 w-3">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+            </span>
+            <span class="font-semibold">{{ sorteo_activo.nombre }}</span>
+        </div>
+        {% else %}
+        <div class="inline-block mt-4 bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full font-semibold">
+            <i class="fas fa-exclamation-triangle mr-2"></i>No hay sorteo activo
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Panel -->
+    <div class="bg-white rounded-2xl shadow-lg form-shadow overflow-hidden">
+
+        <!-- Controles -->
+        <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+            <div class="flex-1">
+                <label class="sr-only" for="buscador">Buscar</label>
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input id="buscador" type="text"
+                           placeholder="Buscar por ticket o documento..."
+                           class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:outline-none">
+                </div>
+            </div>
+            <div class="flex items-center gap-3 text-sm text-gray-600">
+                <span>
+                    <i class="fas fa-hashtag mr-1"></i>
+                    Total: <span id="totalCount" class="font-bold text-orange-600">0</span>
+                </span>
+                <label class="inline-flex items-center gap-2 cursor-pointer">
+                    <input id="autoRefresh" type="checkbox" checked class="rounded text-orange-500">
+                    <span>Auto-actualizar</span>
+                </label>
+                <button id="btnReload" type="button"
+                        class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg">
+                    <i class="fas fa-rotate mr-1"></i>Actualizar
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabla -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Ticket</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Participante</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Documento</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Departamento</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Fecha</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaBody" class="bg-white divide-y divide-gray-100">
+                    <tr><td colspan="5" class="px-4 py-10 text-center text-gray-500">
+                        <i class="fas fa-spinner fa-spin mr-2"></i>Cargando...
+                    </td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div id="paginacion" class="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200 text-sm text-gray-600">
+            <div>
+                Página <span id="pageActual">1</span> de <span id="pageTotal">1</span>
+            </div>
+            <div class="flex gap-2">
+                <button id="btnPrev" class="bg-white border border-gray-300 rounded px-3 py-1 hover:bg-gray-100 disabled:opacity-40" disabled>
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button id="btnNext" class="bg-white border border-gray-300 rounded px-3 py-1 hover:bg-gray-100 disabled:opacity-40" disabled>
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <p class="text-center text-xs text-gray-500 mt-4">
+        Última actualización: <span id="ultimaActualizacion">—</span>
+    </p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const tbody = document.getElementById('tablaBody');
+    const totalCount = document.getElementById('totalCount');
+    const pageActual = document.getElementById('pageActual');
+    const pageTotal = document.getElementById('pageTotal');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    const btnReload = document.getElementById('btnReload');
+    const autoRefresh = document.getElementById('autoRefresh');
+    const buscador = document.getElementById('buscador');
+    const ultimaActualizacion = document.getElementById('ultimaActualizacion');
+
+    const state = { page: 1, perPage: 20, pages: 1, search: '' };
+    let timer = null;
+
+    function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+            {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+        ));
+    }
+
+    function formatoFecha(v) {
+        if (!v) return '';
+        const s = String(v);
+        return s.length >= 16 ? (s.slice(0, 10) + ' ' + s.slice(11, 16)) : s;
+    }
+
+    async function cargar() {
+        const params = new URLSearchParams({ page: state.page, per_page: state.perPage });
+        if (state.search) params.set('search', state.search);
+        try {
+            const res = await fetch('/api/participantes-vivo?' + params.toString(), { cache: 'no-store' });
+            const data = await res.json();
+            if (!data.success) throw new Error('Respuesta inválida');
+
+            totalCount.textContent = data.total;
+            state.pages = Math.max(1, data.pages || 0);
+            pageActual.textContent = data.page;
+            pageTotal.textContent = state.pages;
+            btnPrev.disabled = data.page <= 1;
+            btnNext.disabled = data.page >= state.pages;
+
+            if (!data.participantes.length) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-10 text-center text-gray-500">
+                    <i class="fas fa-inbox mr-2"></i>
+                    ${data.sorteo ? 'Aún no hay participantes aprobados' : 'No hay sorteo activo'}
+                </td></tr>`;
+            } else {
+                tbody.innerHTML = data.participantes.map(p => `
+                    <tr class="hover:bg-orange-50 transition-colors">
+                        <td class="px-4 py-3 font-mono font-bold text-orange-600">#${escapeHtml(p.numero_participacion)}</td>
+                        <td class="px-4 py-3 text-gray-800">${escapeHtml(p.nombres)} ${escapeHtml(p.apellidos)}</td>
+                        <td class="px-4 py-3 text-gray-600">${escapeHtml(p.tipo_documento)}: <span class="font-mono">${escapeHtml(p.documento)}</span></td>
+                        <td class="px-4 py-3 text-gray-600">${escapeHtml(p.departamento)}</td>
+                        <td class="px-4 py-3 text-gray-500 text-sm">${escapeHtml(formatoFecha(p.fecha_registro))}</td>
+                    </tr>
+                `).join('');
+            }
+
+            ultimaActualizacion.textContent = new Date().toLocaleTimeString();
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-10 text-center text-red-500">
+                <i class="fas fa-triangle-exclamation mr-2"></i>Error al cargar: ${escapeHtml(err.message)}
+            </td></tr>`;
+        }
+    }
+
+    function reiniciarTimer() {
+        if (timer) { clearInterval(timer); timer = null; }
+        if (autoRefresh.checked) timer = setInterval(cargar, 15000);
+    }
+
+    btnPrev.addEventListener('click', () => { if (state.page > 1) { state.page--; cargar(); } });
+    btnNext.addEventListener('click', () => { if (state.page < state.pages) { state.page++; cargar(); } });
+    btnReload.addEventListener('click', cargar);
+    autoRefresh.addEventListener('change', reiniciarTimer);
+
+    let debounce;
+    buscador.addEventListener('input', () => {
+        clearTimeout(debounce);
+        debounce = setTimeout(() => {
+            state.search = buscador.value.trim();
+            state.page = 1;
+            cargar();
+        }, 300);
+    });
+
+    cargar();
+    reiniciarTimer();
+})();
+</script>
+{% endblock %}

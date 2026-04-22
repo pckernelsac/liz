@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}RAPI RIFA - Sistema de Sorteos{% endblock %}</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #f5f1eb 0%, #e8dcc6 50%, #f0e68c 100%);
+        }
+        .orange-gradient {
+            background: linear-gradient(135deg, #ff8c00 0%, #ff7f50 50%, #ff6347 100%);
+        }
+        .purple-gradient {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
+        }
+        .mascot-animation {
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+        .form-shadow {
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+        }
+        .hover-scale {
+            transition: transform 0.3s ease;
+        }
+        .hover-scale:hover {
+            transform: scale(1.05);
+        }
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+            }
+        }
+        
+        /* Efecto de destacado para el formulario */
+        .highlight-form {
+            animation: highlight 2s ease-in-out;
+            transform: scale(1.02);
+        }
+        
+        @keyframes highlight {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+            }
+            50% {
+                box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.3);
+            }
+        }
+        
+        /* Estilos especiales para el botón de registro */
+        .register-btn:hover {
+            transform: scale(1.08) !important;
+        }
+        
+        .register-text {
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            font-weight: 800;
+        }
+        
+        @media (max-width: 768px) {
+            .register-btn {
+                order: -1; /* Aparecer primero en móviles */
+                margin-bottom: 0.5rem;
+            }
+            
+            .register-text {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="gradient-bg min-h-screen">
+    
+    <!-- Banner superior -->
+    <div class="purple-gradient text-white py-3 px-4 text-center">
+        <div class="max-w-6xl mx-auto">
+            <p class="text-sm md:text-base font-medium">
+                <i class="fas fa-calendar-alt mr-2"></i>
+                Las rifas se realizan los días miércoles y sabados 8:00pm y se transmitirá por la página  de Facebook “Lizbeth Coras“
+            </p>
+        </div>
+    </div>
+    
+    <!-- Navegación principal -->
+    <nav class="bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4">
+            <div class="flex flex-wrap justify-center items-center gap-4 md:gap-8">
+                <!-- Botón Registrarme - DESTACADO -->
+                <a href="{{ url_for('index') }}#formulario" onclick="irAFormulario(event)" class="flex flex-col items-center text-white hover:text-yellow-300 transition-all duration-300 hover-scale register-btn">
+                    <div class="bg-gradient-to-r from-green-500 to-green-600 p-4 rounded-full mb-2 shadow-lg pulse-animation hover:shadow-xl">
+                        <i class="fas fa-user-plus text-2xl"></i>
+                    </div>
+                    <span class="text-sm font-bold text-green-700 register-text">¡REGISTRARME!</span>
+                </a>
+                
+                <a href="{{ url_for('ver_premios') }}" class="flex flex-col items-center text-orange-600 hover:text-orange-800 transition-colors hover-scale">
+                    <div class="bg-orange-100 p-3 rounded-full mb-2">
+                        <i class="fas fa-gift text-2xl"></i>
+                    </div>
+                    <span class="text-sm font-semibold">Ver premios</span>
+                </a>
+                <a href="{{ url_for('mis_tickets') }}" class="flex flex-col items-center text-orange-600 hover:text-orange-800 transition-colors hover-scale">
+                    <div class="bg-orange-100 p-3 rounded-full mb-2">
+                        <i class="fas fa-ticket-alt text-2xl"></i>
+                    </div>
+                    <span class="text-sm font-semibold">Mis tickets</span>
+                </a>
+                <a href="{{ url_for('lista_sorteos_publico') }}" class="flex flex-col items-center text-orange-600 hover:text-orange-800 transition-colors hover-scale">
+                    <div class="bg-orange-100 p-3 rounded-full mb-2">
+                        <i class="fas fa-trophy text-2xl"></i>
+                    </div>
+                    <span class="text-sm font-semibold">Ganadores</span>
+                </a>
+                {# Módulo "Participantes en vivo" desactivado temporalmente
+                <a href="{{ url_for('participantes_vivo') }}" class="flex flex-col items-center text-orange-600 hover:text-orange-800 transition-colors hover-scale">
+                    <div class="bg-orange-100 p-3 rounded-full mb-2 relative">
+                        <i class="fas fa-users text-2xl"></i>
+                        <span class="absolute -top-1 -right-1 flex h-3 w-3">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                        </span>
+                    </div>
+                    <span class="text-sm font-semibold">En vivo</span>
+                </a>
+                #}
+                <a href="https://wa.me/+51949090982" target="_blank" class="flex flex-col items-center text-orange-600 hover:text-orange-800 transition-colors hover-scale">
+                    <div class="bg-orange-100 p-3 rounded-full mb-2">
+                        <i class="fab fa-whatsapp text-2xl"></i>
+                    </div>
+                    <span class="text-sm font-semibold">WhatsApp</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Contenido principal -->
+    <main class="py-8">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-16">
+        <div class="max-w-6xl mx-auto px-4 text-center">
+            <h3 class="text-xl font-bold mb-4">RAPI RIFA</h3>
+            <p class="text-gray-300 mb-4">Sistema de sorteos - Participa de manera responsable</p>
+            <p class="text-sm text-gray-400">Solo válido para mayores de edad +18</p>
+            <div class="mt-6 flex justify-center space-x-6">
+                <a href="https://www.facebook.com/Kaspincha/" class="text-gray-400 hover:text-white transition-colors">
+                    <i class="fab fa-facebook-f text-xl"></i>
+                </a>
+                
+                <a href="https://wa.me/+51949090982" class="text-gray-400 hover:text-white transition-colors">
+                    <i class="fab fa-whatsapp text-xl"></i>
+                </a>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Modal para mensajes -->
+    <div id="messageModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 items-center justify-center">
+        <div class="bg-white rounded-lg p-6 m-4 max-w-md w-full">
+            <div class="text-center">
+                <div id="modalIcon" class="mx-auto mb-4"></div>
+                <h3 id="modalTitle" class="text-lg font-semibold mb-2"></h3>
+                <p id="modalMessage" class="text-gray-600 mb-4"></p>
+                <button onclick="closeModal()" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-colors">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript base -->
+    <script>
+        function showModal(title, message, type = 'info') {
+            const modal = document.getElementById('messageModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalMessage = document.getElementById('modalMessage');
+            const modalIcon = document.getElementById('modalIcon');
+            
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            
+            // Configurar icono según el tipo
+            if (type === 'success') {
+                modalIcon.innerHTML = '<i class="fas fa-check-circle text-green-500 text-4xl"></i>';
+            } else if (type === 'error') {
+                modalIcon.innerHTML = '<i class="fas fa-times-circle text-red-500 text-4xl"></i>';
+            } else {
+                modalIcon.innerHTML = '<i class="fas fa-info-circle text-blue-500 text-4xl"></i>';
+            }
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        
+        function closeModal() {
+            const modal = document.getElementById('messageModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+        
+        // Cerrar modal al hacer clic fuera de él
+        document.getElementById('messageModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+        
+        // Función para ir al formulario de registro
+        function irAFormulario(event) {
+            // Si ya estamos en la página principal, hacer scroll suave al formulario
+            if (window.location.pathname === '/') {
+                event.preventDefault();
+                console.log('✅ Haciendo scroll al formulario de registro');
+                scrollToFormulario();
+            } else {
+                console.log('🚀 Redirigiendo a la página principal');
+            }
+            // Si no estamos en la página principal, el enlace funcionará normalmente
+        }
+        
+        // Función helper para hacer scroll al formulario
+        function scrollToFormulario() {
+            const formulario = document.getElementById('formulario-registro');
+            if (formulario) {
+                formulario.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+                
+                // Añadir efecto visual de destacado
+                formulario.classList.add('highlight-form');
+                setTimeout(() => {
+                    formulario.classList.remove('highlight-form');
+                }, 2000);
+            }
+        }
+        
+        // Auto-scroll si viene con #formulario en la URL
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.location.hash === '#formulario' && window.location.pathname === '/') {
+                setTimeout(() => {
+                    scrollToFormulario();
+                }, 500); // Esperar un poco para que la página cargue
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+
