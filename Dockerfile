@@ -17,7 +17,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+# SessionMiddleware (app.py) necesita itsdangerous; comprobamos import para no publicar imágenes rotas.
+RUN pip install --no-cache-dir -r requirements.txt \
+    && python -c "import itsdangerous; import starlette.middleware.sessions"
 
 COPY . .
 
