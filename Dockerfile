@@ -17,9 +17,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-# SessionMiddleware (app.py) necesita itsdangerous; comprobamos import para no publicar imágenes rotas.
+# SessionMiddleware necesita itsdangerous; Jinja2Templates necesita jinja2 (no vienen como deps obligatorias de starlette).
 RUN pip install --no-cache-dir -r requirements.txt \
-    && python -c "import itsdangerous; import starlette.middleware.sessions"
+    && python -c "import itsdangerous, jinja2; import starlette.middleware.sessions; from starlette.templating import Jinja2Templates"
 
 COPY . .
 
