@@ -95,7 +95,7 @@ def _default_secret_key() -> str:
 class AppConfig:
     """Configuración de la aplicación usando dataclass."""
     SECRET_KEY: str = field(default_factory=_default_secret_key)
-    UPLOAD_FOLDER: str = 'uploads'
+    UPLOAD_FOLDER: str = field(default_factory=lambda: os.getenv('UPLOAD_FOLDER', 'uploads'))
     MAX_CONTENT_LENGTH: int = 16 * 1024 * 1024  # 16MB
     ALLOWED_EXTENSIONS: set[str] = None
     DEBUG: bool = os.getenv('DEBUG', 'True').lower() == 'true'
@@ -2065,29 +2065,69 @@ def obtener_sorteo_activo_api(request: Request):
 @login_required
 @handle_database_error
 def cerrar_sorteo(request: Request, sorteo_id: int):
-    """Cierra un sorteo activo."""
+    """Cierra un sorteo activo y limpia los comprobantes del disco."""
+    archivos_a_borrar: list[str] = []
     with DatabaseManager() as conn:
         cursor = conn.cursor()
-        
-        # Verificar que el sorteo existe y está activo
+
         sorteo = conn.execute('SELECT * FROM sorteos WHERE id = ?', (sorteo_id,)).fetchone()
         if not sorteo:
             return JSONResponse(content={'success': False, 'message': 'Sorteo no encontrado'}, status_code=404)
         if sorteo['estado'] != 'activo':
             return JSONResponse(content={'success': False, 'message': f'El sorteo ya está en estado: {sorteo["estado"]}'}, status_code=400)
-        # Cerrar el sorteo
+
+        # Recolecta los comprobantes únicos del sorteo que no estén referenciados por participantes
+        # de otros sorteos (paranoia: por si alguna vez se reusara un path entre sorteos).
+        candidatos = conn.execute('''
+            SELECT DISTINCT comprobante_path
+            FROM participantes
+            WHERE sorteo_id = ? AND comprobante_path IS NOT NULL AND comprobante_path <> ''
+        ''', (sorteo_id,)).fetchall()
+        for row in candidatos:
+            ruta = row['comprobante_path']
+            en_uso_externo = conn.execute('''
+                SELECT 1 FROM participantes
+                WHERE comprobante_path = ? AND sorteo_id <> ?
+                LIMIT 1
+            ''', (ruta, sorteo_id)).fetchone()
+            if not en_uso_externo:
+                archivos_a_borrar.append(ruta)
+
         peru_now = get_peru_time().isoformat()
         cursor.execute('''
-            UPDATE sorteos 
+            UPDATE sorteos
             SET estado = 'cerrado',
                 fecha_cierre = ?,
                 updated_at = ?
             WHERE id = ?
         ''', (peru_now, peru_now, sorteo_id,))
-    
+
+        # Limpia las referencias en BD para que la UI no intente cargar archivos que ya no existen.
+        cursor.execute('''
+            UPDATE participantes
+            SET comprobante_path = NULL,
+                updated_at = ?
+            WHERE sorteo_id = ? AND comprobante_path IS NOT NULL
+        ''', (peru_now, sorteo_id,))
+
+    # Borrado en disco fuera de la transacción: si falla, el cierre del sorteo ya está commiteado.
+    upload_dir = Path(config.UPLOAD_FOLDER).resolve()
+    eliminados = 0
+    for nombre in archivos_a_borrar:
+        try:
+            ruta_abs = (upload_dir / nombre).resolve()
+            # Path traversal guard: el archivo debe estar dentro de UPLOAD_FOLDER.
+            ruta_abs.relative_to(upload_dir)
+            if ruta_abs.is_file():
+                ruta_abs.unlink()
+                eliminados += 1
+        except (ValueError, OSError) as e:
+            logger.warning("No se pudo eliminar comprobante %s: %s", nombre, e)
+
     return JSONResponse(content={
         'success': True,
-        'message': f'Sorteo "{sorteo["nombre"]}" cerrado exitosamente'
+        'message': f'Sorteo "{sorteo["nombre"]}" cerrado exitosamente. Comprobantes eliminados: {eliminados}.',
+        'comprobantes_eliminados': eliminados,
     }, status_code=200)
 
 @app.post('/admin/sorteo/nuevo')

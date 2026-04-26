@@ -28,6 +28,10 @@ COPY . .
 # Carpetas que la app escribe en runtime
 RUN mkdir -p uploads logs static/img tmp
 
+# IMPORTANTE: monta un volumen persistente en /app/uploads (y opcionalmente /app/logs)
+# desde EasyPanel para que los comprobantes sobrevivan entre deploys.
+VOLUME ["/app/uploads"]
+
 EXPOSE 5000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
