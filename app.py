@@ -343,7 +343,9 @@ class DatabaseManager:
         self.dsn = dsn
 
     def __enter__(self) -> PgConnection:
-        self._conn = psycopg2.connect(self.dsn)
+        self._conn = psycopg2.connect(self.dsn, options="-c timezone=America/Lima")
+        with self._conn.cursor() as _cur:
+            _cur.execute("SET TIME ZONE 'America/Lima'")
         return PgConnection(self._conn)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -403,36 +405,54 @@ class FileManager:
         except Exception as e:
             logger.warning(f"No se pudo optimizar la imagen {file_path}: {e}")
 
-def _generar_numero_participacion_unico(conn: PgConnection, max_attempts: int = 1000) -> str:
-    """Genera un número único de participación de 6 dígitos con protección contra race conditions."""
-    import random
-    import time
+def _numero_tiene_patron_serial_obvio(n: int) -> bool:
+    """Patrones poco deseables: todos los dígitos iguales, o 6 cifras en escalera (±1)."""
+    s = f"{n:06d}"
+    digitos = [int(c) for c in s]
+    if len(set(digitos)) == 1:
+        return True
+    if all(digitos[i + 1] - digitos[i] == 1 for i in range(5)):
+        return True
+    if all(digitos[i] - digitos[i + 1] == 1 for i in range(5)):
+        return True
+    return False
 
-    # Usar un generador aleatorio más robusto
-    secure_random = random.SystemRandom()
 
-    # Intentar generar un número único
-    for attempt in range(max_attempts):
-        # Para los primeros intentos, usar números aleatorios
-        if attempt < 100:
-            numero = secure_random.randint(100000, 999999)
-        else:
-            # Si hay muchos intentos fallidos, combinar timestamp con aleatorio
-            base_time = int(time.time() * 1000) % 1000000
-            offset = secure_random.randint(0, 999)
-            numero = ((base_time + offset) % 900000) + 100000
+def _es_consecutivo_a_alguno(n: int, otros: set[str]) -> bool:
+    for o in otros:
+        if o.isdigit() and len(o) == 6 and abs(n - int(o)) == 1:
+            return True
+    return False
 
-        numero_str = str(numero)
 
-        # Verificar que no exista
-        resultado = conn.execute('SELECT COUNT(*) as count FROM participantes WHERE numero_participacion = ?', (numero_str,)).fetchone()
-        if resultado['count'] == 0:
+def _generar_numero_participacion_unico(
+    conn: PgConnection,
+    max_attempts: int = 50_000,
+    excluidos_local: Optional[set[str]] = None,
+) -> str:
+    """Genera un número de participación aleatorio de 6 dígitos (100000–999999), único en BD.
+
+    No usa contadores ni timestamps: solo aleatoriedad criptográfica (secrets). Opcionalmente
+    evita asignar un número inmediatamente consecutivo (±1) a los ya usados en el mismo lote
+    o listados en ``excluidos_local``."""
+    excl: set[str] = excluidos_local or set()
+    for _ in range(max_attempts):
+        n = secrets.randbelow(900_000) + 100_000
+        if _numero_tiene_patron_serial_obvio(n):
+            continue
+        if _es_consecutivo_a_alguno(n, excl):
+            continue
+        numero_str = f"{n:06d}"
+        resultado = conn.execute(
+            "SELECT COUNT(*) as count FROM participantes WHERE numero_participacion = ?",
+            (numero_str,),
+        ).fetchone()
+        if resultado and resultado["count"] == 0:
             return numero_str
 
-    # Si no se pudo generar después de muchos intentos, usar secuencia basada en timestamp
-    # Esto garantiza unicidad incluso bajo alta carga
-    timestamp_micro = str(int(time.time() * 1000000))[-6:]
-    return timestamp_micro
+    raise RuntimeError(
+        "No se pudo generar un número de participación único. Intente de nuevo o contacte al administrador."
+    )
 
 def _pg_column_exists(cursor: PgCursor, table: str, column: str) -> bool:
     cursor.execute(
@@ -571,8 +591,12 @@ def init_database() -> None:
             participantes_existentes = conn.execute(
                 "SELECT id FROM participantes WHERE numero_participacion IS NULL"
             ).fetchall()
+            migr_numeros: set[str] = set()
             for p in participantes_existentes:
-                numero_participacion = _generar_numero_participacion_unico(conn)
+                numero_participacion = _generar_numero_participacion_unico(
+                    conn, excluidos_local=migr_numeros
+                )
+                migr_numeros.add(numero_participacion)
                 cursor.execute(
                     "UPDATE participantes SET numero_participacion = ? WHERE id = ?",
                     (numero_participacion, p["id"]),
@@ -842,7 +866,8 @@ async def registrar_participante(request: Request):
     
     ticket_ids = []
     numeros = []  # NUEVO: lista con los números reales de participación
-    
+    excl_mismo_lote: set[str] = set()
+
     # Guardar en base de datos
     with DatabaseManager() as conn:
         cursor = conn.cursor()
@@ -856,7 +881,9 @@ async def registrar_participante(request: Request):
             for retry_attempt in range(max_retries):
                 try:
                     # Generar número de participación único
-                    numero_participacion = _generar_numero_participacion_unico(conn)
+                    numero_participacion = _generar_numero_participacion_unico(
+                        conn, excluidos_local=excl_mismo_lote
+                    )
 
                     cursor.execute('''
                         INSERT INTO participantes
@@ -881,6 +908,7 @@ async def registrar_participante(request: Request):
                     ticket_id = cursor.lastrowid
                     ticket_ids.append(ticket_id)
                     numeros.append(numero_participacion)
+                    excl_mismo_lote.add(numero_participacion)
                     ticket_created = True
                     break  # Success, exit retry loop
 
@@ -922,8 +950,8 @@ def ver_premios(request: Request) -> str:
     return templates.TemplateResponse('premios.html', template_ctx(request, premios=premios, es_admin=es_admin))
 
 @app.get('/mis-tickets')
-def mis_tickets(request: Request) -> str:
-    return templates.TemplateResponse('mis_tickets.html', template_ctx(request))
+def mis_tickets(request: Request):
+    return RedirectResponse(url='/participantes-vivo', status_code=302)
 
 @app.post('/consultar-ticket')
 @handle_database_error  
@@ -1237,7 +1265,7 @@ def realizar_sorteo(request: Request):
         'sorteo_id': sorteo_id, 
         'ganadores': ganadores_seleccionados,
         'total_participantes': len(participantes),
-        'fecha_sorteo': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        'fecha_sorteo': get_peru_time().strftime('%Y-%m-%d %H:%M:%S')
     }, status_code=201)
 
 @app.post('/validar-comprobante')
@@ -1887,6 +1915,10 @@ async def asignar_tickets(request: Request):
         participante = conn.execute('SELECT * FROM participantes WHERE id = ?', (participante_id,)).fetchone()
         if not participante:
             return JSONResponse(content={'success': False, 'message': 'Participante no encontrado'}, status_code=404)
+        excl_mismo_lote: set[str] = set()
+        if participante.get('numero_participacion'):
+            excl_mismo_lote.add(str(participante['numero_participacion']))
+
         # Crear tickets adicionales (cantidad_tickets - 1 porque ya tiene uno)
         tickets_creados = []
         numeros_asignados = []
@@ -1898,7 +1930,9 @@ async def asignar_tickets(request: Request):
 
             for retry_attempt in range(max_retries):
                 try:
-                    numero_participacion = _generar_numero_participacion_unico(conn)
+                    numero_participacion = _generar_numero_participacion_unico(
+                        conn, excluidos_local=excl_mismo_lote
+                    )
 
                     cursor.execute('''
                         INSERT INTO participantes
@@ -1924,6 +1958,7 @@ async def asignar_tickets(request: Request):
 
                     tickets_creados.append(cursor.lastrowid)
                     numeros_asignados.append(numero_participacion)
+                    excl_mismo_lote.add(numero_participacion)
                     ticket_created = True
                     break  # Success, exit retry loop
 
@@ -2064,7 +2099,7 @@ async def crear_nuevo_sorteo(request: Request):
         data = await request.json()
     except Exception:
         data = {}
-    nombre = data.get('nombre', f'Sorteo {datetime.now().strftime("%Y-%m-%d")}')
+    nombre = data.get('nombre', f'Sorteo {get_peru_time().strftime("%Y-%m-%d")}')
     descripcion = data.get('descripcion', '')
     
     with DatabaseManager() as conn:
@@ -2552,6 +2587,17 @@ async def registrar_compra_adicional(request: Request):
         
         if not cliente:
             return JSONResponse(content={'success': False, 'message': 'Cliente no encontrado'}, status_code=404)
+
+        filas_tickets = conn.execute(
+            "SELECT numero_participacion FROM participantes WHERE numero_documento = ?",
+            (numero_documento,),
+        ).fetchall()
+        excl_mismo_lote: set[str] = {
+            str(r["numero_participacion"])
+            for r in filas_tickets
+            if r.get("numero_participacion")
+        }
+
         # Crear nuevos tickets
         tickets_creados = []
         numeros_asignados = []
@@ -2563,7 +2609,9 @@ async def registrar_compra_adicional(request: Request):
 
             for retry_attempt in range(max_retries):
                 try:
-                    numero_participacion = _generar_numero_participacion_unico(conn)
+                    numero_participacion = _generar_numero_participacion_unico(
+                        conn, excluidos_local=excl_mismo_lote
+                    )
 
                     # ✅ NUEVO: Obtener sorteo activo
                     sorteo_activo = get_sorteo_activo()
@@ -2600,6 +2648,7 @@ async def registrar_compra_adicional(request: Request):
                     ticket_id = cursor.lastrowid
                     tickets_creados.append(ticket_id)
                     numeros_asignados.append(numero_participacion)
+                    excl_mismo_lote.add(numero_participacion)
 
                     # Si se aprueba automáticamente, registrar en historial
                     if aprobar:

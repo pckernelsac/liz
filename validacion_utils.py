@@ -8,6 +8,9 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any
 from pathlib import Path
 import json
+import pytz
+
+PERU_TZ = pytz.timezone('America/Lima')
 
 
 class ValidacionManager:
@@ -227,7 +230,7 @@ class ValidacionManager:
         stats = self.get_estadisticas_validacion()
         
         reporte = {
-            'fecha_generacion': datetime.now().isoformat(),
+            'fecha_generacion': datetime.now(PERU_TZ).isoformat(),
             'resumen': {
                 'total_participantes': stats['basicas']['total_comprobantes'],
                 'con_comprobante': stats['basicas']['total_comprobantes'] - stats['basicas']['sin_comprobante'],
@@ -303,7 +306,9 @@ def format_fecha(fecha_str: str) -> str:
     
     try:
         dt = datetime.fromisoformat(fecha_str.replace('Z', '+00:00'))
-        return dt.strftime('%d/%m/%Y %H:%M')
+        if dt.tzinfo is None:
+            dt = pytz.utc.localize(dt)
+        return dt.astimezone(PERU_TZ).strftime('%d/%m/%Y %H:%M')
     except:
         return fecha_str
 

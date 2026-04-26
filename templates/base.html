@@ -134,11 +134,15 @@
                     </div>
                     <span class="text-sm font-semibold">Ver premios</span>
                 </a>
-                <a href="{{ url_for('mis_tickets') }}" class="flex flex-col items-center text-orange-600 hover:text-orange-800 transition-colors hover-scale">
-                    <div class="bg-orange-100 p-3 rounded-full mb-2">
-                        <i class="fas fa-ticket-alt text-2xl"></i>
+                <a href="{{ url_for('participantes_vivo') }}" class="flex flex-col items-center text-orange-600 hover:text-orange-800 transition-colors hover-scale">
+                    <div class="bg-orange-100 p-3 rounded-full mb-2 relative">
+                        <i class="fas fa-users text-2xl"></i>
+                        <span class="absolute -top-1 -right-1 flex h-3 w-3">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                        </span>
                     </div>
-                    <span class="text-sm font-semibold">Mis tickets</span>
+                    <span class="text-sm font-semibold">En vivo</span>
                 </a>
                 <a href="{{ url_for('lista_sorteos_publico') }}" class="flex flex-col items-center text-orange-600 hover:text-orange-800 transition-colors hover-scale">
                     <div class="bg-orange-100 p-3 rounded-full mb-2">
