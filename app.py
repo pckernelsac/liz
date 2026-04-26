@@ -3157,8 +3157,8 @@ def api_participantes_vivo(request: Request):
         'numero_participacion': r['numero_participacion'],
         'tipo_documento': r['tipo_documento'],
         'documento': _ofuscar_documento(r['numero_documento']),
-        'nombres': _ofuscar_nombre(r['nombres']),
-        'apellidos': _ofuscar_nombre(r['apellidos']),
+        'nombres': r['nombres'] or '',
+        'apellidos': r['apellidos'] or '',
         'departamento': r['departamento'],
         'fecha_registro': r['fecha_registro'],
     } for r in rows]
